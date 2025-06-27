@@ -1,0 +1,139 @@
+{
+  "sensors": {
+    "attpitch": {
+      "english": "P.angle",
+      "translation": "P.angle",
+      "needs_translation": "true"
+    },
+    "attroll": {
+      "english": "R.angle",
+      "translation": "R.angle",
+      "needs_translation": "true"
+    },
+    "attyaw": {
+      "english": "Y.angle",
+      "translation": "Y.angle",
+      "needs_translation": "true"
+    },
+    "accx": {
+      "english": "Accel X",
+      "translation": "Accel X",
+      "needs_translation": "true"
+    },
+    "accy": {
+      "english": "Accel Y",
+      "translation": "Accel Z",
+      "needs_translation": "true"
+    },
+    "accz": {
+      "english": "Accel Z",
+      "translation": "Accel Z",
+      "needs_translation": "true"
+    },
+    "groundspeed": {
+      "english": "Ground Speed",
+      "translation": "Ground Speed",
+      "needs_translation": "true"
+    },
+    "esc_temp": {
+      "english": "ESC Temperature",
+      "translation": "ESC Temperatur",
+      "needs_translation": "false"
+    },
+    "rate_profile": {
+      "english": "Rate Profile",
+      "translation": "Rate-Profil",
+      "needs_translation": "false"
+    },
+    "headspeed": {
+      "english": "Headspeed",
+      "translation": "Drehzahl",
+      "needs_translation": "false"
+    },
+    "altitude": {
+      "english": "Altitude",
+      "translation": "Altitude",
+      "needs_translation": "true"
+    },
+    "voltage": {
+      "english": "Voltage",
+      "translation": "Spannung",
+      "needs_translation": "false"
+    },
+    "bec_voltage": {
+      "english": "Bec voltage",
+      "translation": "Bec voltage",
+      "needs_translation": "true"
+    },
+    "cell_count": {
+      "english": "Cell count",
+      "translation": "Cell Count",
+      "needs_translation": "true"
+    },
+    "governor": {
+      "english": "Governor State",
+      "translation": "Governor Status",
+      "needs_translation": "false"
+    },
+    "adj_func": {
+      "english": "Adj (Function)",
+      "translation": "Adj (Funktion)",
+      "needs_translation": "false"
+    },
+    "fuel": {
+      "english": "Fuel",
+      "translation": "Kraftstoffstand",
+      "needs_translation": "false"
+    },
+    "smartfuel": {
+      "english": "Smart fuel",
+      "translation": "Smart fuel",
+      "needs_translation": "true"
+    },
+    "rssi": {
+      "english": "RSSI",
+      "translation": "RSSI",
+      "needs_translation": "false"
+    },
+    "adj_val": {
+      "english": "Adj (Value)",
+      "translation": "Adj (Wert)",
+      "needs_translation": "false"
+    },
+    "arming_flags": {
+      "english": "Arming Flags",
+      "translation": "Arming-Flags",
+      "needs_translation": "false"
+    },
+    "current": {
+      "english": "Current",
+      "translation": "Strom",
+      "needs_translation": "false"
+    },
+    "throttle_pct": {
+      "english": "Throttle %",
+      "translation": "Gas %",
+      "needs_translation": "false"
+    },
+    "consumption": {
+      "english": "Consumption",
+      "translation": "Verbrauch",
+      "needs_translation": "false"
+    },
+    "profile": {
+      "english": "Profile",
+      "translation": "Profile",
+      "needs_translation": "true"
+    },
+    "mcu_temp": {
+      "english": "MCU Temperature",
+      "translation": "MCU Temperatur",
+      "needs_translation": "false"
+    },
+    "armdisableflags": {
+      "english": "Arming Disable",
+      "translation": "Arming-Disable",
+      "needs_translation": "false"
+    }
+  }
+}
