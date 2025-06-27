@@ -1,0 +1,39 @@
+<Sensors>
+
+    <Group name="Flight Control">
+        <Sensor name="armed" label="Arm" type="bool" default="0"  multiplier="1" unit="" />
+        <Sensor name="rpm" label="Headspeed" round="true" type="range" default="1800" min="0" max="2000" rand="10" multiplier="1" unit="rpm" />
+    </Group>
+
+    <Group name="Power System">
+        <Sensor name="voltage" label="Main Voltage" type="range" min="0" max="10" rand="0" multiplier="100" unit="V" default="8.2" />
+        <Sensor name="bec_voltage" label="BEC Voltage" type="range" rand="5" min="4.0" max="8.0" multiplier="100" unit="V" default="8.0" />
+        <Sensor name="current" label="Current" type="range" rand="5" min="0" max="200" multiplier="1" unit="A" />
+        <Sensor name="consumption" label="Consumption" round="true" type="range" default="0" min="0" max="5000" rand="0" multiplier="1" unit="mAh" />
+        <Sensor name="fuel" label="Fuel" round="true" type="range" default="0" min="0" max="100" rand="0" multiplier="1" unit="%" />
+    </Group>
+
+    <Group name="Flight Profiles">
+
+        <Sensor name="profile" label="Profile" type="select">
+            <Option value="1" label="1" />
+            <Option value="2" label="2" />
+            <Option value="3" label="3" />
+        </Sensor>
+    </Group>
+
+    <Group name="Other Sensors">
+        <Sensor name="temp_esc" label="ESC Temp" round="true" type="range" rand="5" min="10" max="80" default="50" unit="°C" />
+        <Sensor name="temp_mcu" label="MCU Temp" round="true" type="range" rand="5" min="10" max="80" default="30" unit="°C" />
+    </Group>
+   
+
+    <Group name="System Events">
+        <Sensor name="simevent_telemetry_state" label="Telemetry State"  type="select" round="true"  default="0"  multiplier="1" unit="">
+            <Option value="0" label="Enabled" />
+            <Option value="1" label="Disabled" />
+        </Sensor>    
+     </Group>    
+
+
+</Sensors>

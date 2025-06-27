@@ -1,0 +1,62 @@
+name: Create ofs3-lua-ethos ZIP on PR
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  create-zip:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set build variables (PR version)
+      run: |
+        PR_NUMBER=${{ github.event.pull_request.number }}
+        echo "GIT_VER=PR-${PR_NUMBER}" >> $GITHUB_ENV
+
+    - name: Update version and config in main.lua
+      run: |
+        # Use GIT_VER set in previous step
+        sed -i 's/\(config.version = {[^}]*suffix = \)"[^"]*"/\1"${{ env.GIT_VER }}"/' scripts/ofs3/main.lua
+
+        # Show updated file (for verification)
+        grep 'config\.' scripts/ofs3/main.lua
+
+    - name: Create rotorflight-lua-ethos-suite-PR-<number>.zip 
+      run: |
+        zip -q -r -9 "rotorflight-lua-ethos-suite-${{ env.GIT_VER }}.zip" scripts
+
+    - name: Upload rotorflight-lua-ethos-suite-PR-<number>.zip as Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: rotorflight-lua-ethos-suite-${{ env.GIT_VER }}
+        path: rotorflight-lua-ethos-suite-${{ env.GIT_VER }}.zip
+        if-no-files-found: error
+
+    - name: Package combined soundpack
+      run: |
+        # Where your per-locale packs live
+        SOUND_DIR="bin/sound-generator/soundpack"
+
+        # Where to drop the ZIP
+        OUTPUT_DIR="${GITHUB_WORKSPACE}/tmp"
+        mkdir -p "$OUTPUT_DIR"
+
+        # Name it with your GIT_VER (e.g. PR-936 or 1.2.3)
+        ZIP_NAME="rotorflight-lua-ethos-suite-soundpack-${{ env.GIT_VER }}.zip"
+
+        # Zip up everything under SOUND_DIR, preserving locale/pack/... structure
+        (cd "$SOUND_DIR" && zip -r "$OUTPUT_DIR/$ZIP_NAME" .)
+
+        echo "✅ Created $OUTPUT_DIR/$ZIP_NAME"
+
+    - name: Upload soundpack artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: rotorflight-lua-ethos-suite-soundpack-${{ env.GIT_VER }}
+        path: tmp/*.zip
+
+     
