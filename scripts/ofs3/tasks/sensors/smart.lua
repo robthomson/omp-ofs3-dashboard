@@ -77,6 +77,15 @@ local smart_sensors = {
         minimum = -2000,
         maximum = 2000,
         value = function()
+
+            if system:getVersion().simulation then
+                local simValue = ofs3.utils.simSensors('armed')
+                if simValue == nil then
+                    return nil
+                end
+                return simValue == 0 and 1 or 0
+            end
+
             local value = ofs3.session.rx.values['arm'] 
             if value then
                 if value >= 500 then
@@ -94,7 +103,14 @@ local smart_sensors = {
         minimum = -2000,
         maximum = 2000,
         value = function()
-            local value = ofs3.session.rx.values['headspeed'] 
+
+            if system:getVersion().simulation then
+                local simValue = ofs3.utils.simSensors('profile')
+                return simValue or 1
+            end
+
+
+            local value = ofs3.session.rx.values['headspeed']  -- seems odd but is valid
             if value then
                 if value < -500 then
                     return 1

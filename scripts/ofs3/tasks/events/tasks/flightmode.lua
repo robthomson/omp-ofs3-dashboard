@@ -36,10 +36,12 @@ function flightmode.inFlight()
     end
 
     local rpm = telemetry.getSensor("rpm")
-    if rpm and rpm > 1000 then
-        return true
+    local armed = telemetry.getSensor("armed")
+    if armed == 0 then
+        if rpm and rpm > 1000 then
+            return true
+        end
     end
-
     return false
 end
 
