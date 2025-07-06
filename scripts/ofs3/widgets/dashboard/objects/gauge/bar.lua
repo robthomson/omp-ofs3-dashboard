@@ -205,7 +205,10 @@ local function drawBatteryBox(x, y, w, h, percent, gaugeorientation, batterysegm
     end
 end
 
-function render.wakeup(box, telemetry)
+function render.wakeup(box)
+
+    local telemetry = ofs3.tasks.telemetry
+    
     -- Value extraction
     local source = getParam(box, "source")
     local value, _, dynamicUnit
@@ -411,7 +414,7 @@ function render.paint(x, y, w, h, box)
         drawFilledRoundedRectangle(gauge_x, gauge_y, gauge_w, gauge_h, c.roundradius)
 
         -- Bar fill
-        if not c.battstats and c.percent > 0 then
+        if not c.battstats and (tonumber(c.percent) or 0) > 0 then
             lcd.color(c.fillcolor)
             if c.gaugeorientation == "vertical" then
                 local fillH = math.floor(gauge_h * c.percent)

@@ -860,5 +860,12 @@ function utils.splitVersionStringToNumbers(versionString)
     return parts
 end
 
+function utils.keys(tbl)
+    local keys = {}
+    for k in pairs(tbl) do
+        table.insert(keys, k)
+    end
+    return keys
+end
 
 return utils

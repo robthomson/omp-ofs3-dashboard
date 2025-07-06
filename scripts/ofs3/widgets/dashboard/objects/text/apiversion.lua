@@ -51,7 +51,10 @@ function render.dirty(box)
 end
 
 
-function render.wakeup(box, telemetry)
+function render.wakeup(box)
+
+    local telemetry = ofs3.tasks.telemetry
+    
     -- Value extraction
     local value = ofs3.session.apiVersion
 

@@ -1201,5 +1201,8 @@ function dashboard.menu(widget)
     }
 end
 
+-- table to stall object cache
+dashboard.renders = dashboard.renders or {}
+
 
 return dashboard

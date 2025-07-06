@@ -1,7 +1,9 @@
 local wrapper = {}
 
-local renders = {}
+local renders = ofs3.widgets.dashboard.renders
 local folder = "SCRIPTS:/" .. ofs3.config.baseDir .. "/widgets/dashboard/objects/time/"
+local utils = ofs3.widgets.dashboard.utils
+
 
 function wrapper.paint(x, y, w, h, box)
     local subtype = box.subtype or "flight"
@@ -10,11 +12,11 @@ function wrapper.paint(x, y, w, h, box)
     render.paint(x, y, w, h, box)
 end
 
-function wrapper.wakeup(box, telemetry)
+function wrapper.wakeup(box)
 
-    -- Ensure telemetry is available
-    if not telemetry then
-        return
+    -- Ensure model preferences and telemetry are available
+    if not utils.isModelPrefsReady() then
+        utils.resetBoxCache(box)
     end
 
     -- Wakeup interval control using optional parameter (wakeupinterval)
@@ -47,10 +49,11 @@ function wrapper.wakeup(box, telemetry)
     end
 
     local render = renders[subtype]
-    render.wakeup(box, telemetry)
+    render.wakeup(box)
 end
 
 function wrapper.dirty(box)
+    if not utils.isModelPrefsReady() then return false end
     local subtype = box.subtype or "flight"
     local render = renders[subtype]
     return render and render.dirty and render.dirty(box) or false

@@ -70,7 +70,10 @@ function render.dirty(box)
     return false
 end
 
-function render.wakeup(box, telemetry)
+function render.wakeup(box)
+
+    local telemetry = ofs3.tasks.telemetry
+    
     -- Value extraction
     local object = (getParam(box, "object"))
     local source

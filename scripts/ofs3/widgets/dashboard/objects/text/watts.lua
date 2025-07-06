@@ -36,8 +36,10 @@ local sumWatts = 0
 local countWatts = 0
 local avgWatts = 0
 
-function render.wakeup(box, telemetry)
+function render.wakeup(box)
 
+    local telemetry = ofs3.tasks.telemetry
+    
     local watts
     local v = ofs3.tasks.telemetry.sensorStats["voltage"]
     local i = ofs3.tasks.telemetry.sensorStats["current"]

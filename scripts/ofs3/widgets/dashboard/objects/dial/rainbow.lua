@@ -108,7 +108,10 @@ local function calDialAngle(percent, startAngle, sweepAngle)
     return (startAngle or 135) + (sweepAngle or 270) * (percent or 0)
 end
 
-function render.wakeup(box, telemetry)
+function render.wakeup(box)
+
+    local telemetry = ofs3.tasks.telemetry
+    
     -- Value extraction
     local source = getParam(box, "source")
     local value, _, dynamicUnit

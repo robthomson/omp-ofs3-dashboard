@@ -680,6 +680,8 @@ function utils.applyOffset(x, y, box)
 end
 
 
-
+function utils.isModelPrefsReady()
+    return true
+end
 
 return utils
