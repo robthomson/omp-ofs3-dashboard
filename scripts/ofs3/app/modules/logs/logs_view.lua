@@ -77,13 +77,11 @@ end
 
 function readNextChunk()
     if logDataRawReadComplete then
-        ofs3.tasks.callback.clear(readNextChunk)
         return
     end
 
     if not logFileHandle then
-        --system.messageBox("Log file handle lost.")
-        ofs3.tasks.callback.clear(readNextChunk)
+        system.messageBox("Log file handle lost.")
         return
     end
 
@@ -101,7 +99,6 @@ function readNextChunk()
         logDataRaw = table.concat(logDataRaw)
 
         ofs3.utils.log("Read complete, total size: " .. #logDataRaw .. " bytes","debug")
-        ofs3.tasks.callback.clear(readNextChunk)
     end
 end
 
@@ -510,7 +507,6 @@ end
 local function openPage(pidx, title, script, logfile, displaymode,dirname)
   
 
-
     ofs3.app.triggers.isReady = false
     ofs3.app.uiState = ofs3.app.uiStatus.pages
 
@@ -520,16 +516,17 @@ local function openPage(pidx, title, script, logfile, displaymode,dirname)
     ofs3.app.lastTitle = title
     ofs3.app.lastScript = script
 
-    ofs3.session.activeLogDir = utils.getLogPath()
-    local name = utils.resolveModelName(ofs3.session.activeLogDir)
+    local name = utils.resolveModelName(ofs3.session.mcu_id or ofs3.app.activeLogDir)
     ofs3.app.ui.fieldHeader("Logs / " .. extractShortTimestamp(logfile))
     activeLogFile = logfile
 
     local filePath
 
-    filePath = utils.getLogDir() .. "/" .. logfile
-
-
+    if ofs3.app.activeLogDir then
+        filePath = utils.getLogDir(ofs3.app.activeLogDir) .. "/" .. logfile
+    else
+        filePath = utils.getLogDir() .. "/" .. logfile
+    end
     logFileHandle, err = io.open(filePath, "rb")
 
     -- slider
@@ -591,7 +588,6 @@ local function openPage(pidx, title, script, logfile, displaymode,dirname)
     logFileReadOffset = 0
     logDataRawReadComplete = false
 
-    ofs3.tasks.callback.every(0.05, readNextChunk)
     ofs3.app.triggers.closeProgressLoader = true
     lcd.invalidate()
     enableWakeup = true
@@ -672,6 +668,11 @@ local function wakeup()
         updatePaintCache()
         lcd.invalidate()
         sliderPositionOld = sliderPosition
+    end
+
+    if logFileHandle and not logDataRawReadComplete then
+        readNextChunk()
+        return   -- exit early so we don’t start processing until we've got more data
     end
 
     if not progressLoader then

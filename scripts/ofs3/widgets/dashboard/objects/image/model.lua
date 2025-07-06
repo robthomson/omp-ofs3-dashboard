@@ -46,8 +46,8 @@ function render.dirty(box)
 end
 
 function render.wakeup(box)
-    local craftName = rfsuite and ofs3.session and ofs3.session.craftName
-    local modelID   = rfsuite and ofs3.session and ofs3.session.modelID
+    local craftName = ofs3 and ofs3.session and ofs3.session.craftName
+    local modelID   = ofs3 and ofs3.session and ofs3.session.modelID
     local imagePath
 
     if craftName then
