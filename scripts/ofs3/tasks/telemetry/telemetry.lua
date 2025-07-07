@@ -207,7 +207,7 @@ local sensorTable = {
             sim = {
                 { uid = 0x5003, unit = UNIT_RPM, dec = nil,
                   value = function() return ofs3.utils.simSensors('rpm') end,
-                  min = 0, max = 2000 },
+                  min = 0, max = 4000 },
             },
             crsf = { "GPS alt" },
         },
