@@ -65,7 +65,7 @@ end
 function sensors.wakeup()
 
     if ofs3.session.resetSensors and not delayPending then
-        delayStartTime = ofs3.clock
+        delayStartTime = os.clock()
         delayPending = true
         ofs3.session.resetSensors = false  -- Reset immediately
         log("Delaying sensor wakeup for " .. delayDuration .. " seconds","info")
@@ -73,7 +73,7 @@ function sensors.wakeup()
     end
 
     if delayPending then
-        if ofs3.clock - delayStartTime >= delayDuration then
+        if os.clock() - delayStartTime >= delayDuration then
             log("Delay complete; resuming sensor wakeup","info")
             delayPending = false
         else

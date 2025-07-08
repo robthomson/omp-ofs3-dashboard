@@ -58,8 +58,8 @@ end
 ]]
 logs.queue = {} 
 logs.disk_queue = {} 
-logs.last_print_time = ofs3.clock
-logs.last_disk_write_time = ofs3.clock
+logs.last_print_time = os.clock()
+logs.last_disk_write_time = os.clock()
 
 
 --[[
@@ -158,7 +158,7 @@ end
 local function process_console_queue()
     if not logs.config.enabled or logs.config.min_print_level == "off" then return end
 
-    local now = ofs3.clock
+    local now = os.clock()
     if now - logs.last_print_time >= logs.config.print_interval and #logs.queue > 0 then
         logs.last_print_time = now
 
@@ -193,7 +193,7 @@ end
 local function process_disk_queue()
     if not logs.config.enabled or logs.config.min_print_level == "off" or not logs.config.log_to_file then return end
 
-    local now = ofs3.clock
+    local now = os.clock()
     if now - logs.last_disk_write_time >= logs.config.disk_write_interval and #logs.disk_queue > 0 then
         logs.last_disk_write_time = now
 

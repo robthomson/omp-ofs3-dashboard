@@ -56,7 +56,7 @@ function stats.wakeup()
 
     if ofs3.flightmode.current ~= "inflight" then return end
 
-    local now = ofs3.clock
+    local now = os.clock()
     if now - lastTrackTime < 0.25 then return end
     lastTrackTime = now
 

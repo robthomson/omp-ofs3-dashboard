@@ -144,7 +144,7 @@ app.init: Initialization function.
 app.guiIsRunning: Boolean indicating if the GUI is running.
 app.menuLastSelected: Table to store the last selected menu item.
 app.adjfunctions: Table to store adjustment functions.
-app.profileCheckScheduler: Scheduler for profile checks using ofs3.clock.
+app.profileCheckScheduler: Scheduler for profile checks using os.clock().
 app.offLineMode : Boolean indicating if the app is in offline mode.
 ]]
 app.sensors = {}
@@ -173,7 +173,7 @@ app.sensor = {}
 app.init = nil
 app.guiIsRunning = false
 app.adjfunctions = nil
-app.profileCheckScheduler = ofs3.clock
+app.profileCheckScheduler = os.clock()
 app.offlineMode = false
 
 
@@ -214,7 +214,7 @@ app.dialogs.progress = false
 app.dialogs.progressDisplay = false
 app.dialogs.progressWatchDog = nil
 app.dialogs.progressCounter = 0
-app.dialogs.progressRateLimit = ofs3.clock
+app.dialogs.progressRateLimit = os.clock()
 app.dialogs.progressRate = 0.25 
 
 --[[
@@ -232,7 +232,7 @@ app.dialogs.progressESC = false
 app.dialogs.progressDisplayEsc = false
 app.dialogs.progressWatchDogESC = nil
 app.dialogs.progressCounterESC = 0
-app.dialogs.progressESCRateLimit = ofs3.clock
+app.dialogs.progressESCRateLimit = os.clock()
 app.dialogs.progressESCRate = 2.5 
 
 --[[
@@ -250,7 +250,7 @@ app.dialogs.save = false
 app.dialogs.saveDisplay = false
 app.dialogs.saveWatchDog = nil
 app.dialogs.saveProgressCounter = 0
-app.dialogs.saveRateLimit = ofs3.clock
+app.dialogs.saveRateLimit = os.clock()
 app.dialogs.saveRate = 0.25
 
 --[[
@@ -266,7 +266,7 @@ app.dialogs.saveRate = 0.25
 app.dialogs.nolink = false
 app.dialogs.nolinkDisplay = false
 app.dialogs.nolinkValueCounter = 0
-app.dialogs.nolinkRateLimit = ofs3.clock
+app.dialogs.nolinkRateLimit = os.clock()
 app.dialogs.nolinkRate = 0.25
 
 --[[
@@ -377,7 +377,7 @@ local function saveSettings()
     if app.pageState == app.pageStatus.saving then return end
 
     app.pageState = app.pageStatus.saving
-    app.saveTS = ofs3.clock
+    app.saveTS = os.clock()
 
     -- we handle saving 100% different for multi mspapi
     log("Saving data", "debug")
@@ -960,7 +960,7 @@ app._uiTasks = {
   function()
     if not app.dialogs.saveDisplay or not app.dialogs.saveWatchDog then return end
     local timeout = tonumber(5)
-    if (ofs3.clock - app.dialogs.saveWatchDog) > timeout
+    if (os.clock() - app.dialogs.saveWatchDog) > timeout
        or (app.dialogs.saveProgressCounter > 120 ) then
       app.audio.playTimeout = true
       app.ui.progressDisplaySaveMessage(i18n("app.error_timed_out"))
@@ -979,7 +979,7 @@ app._uiTasks = {
     if not app.dialogs.progressDisplay or not app.dialogs.progressWatchDog then return end
     app.dialogs.progressCounter = app.dialogs.progressCounter + (app.Page and app.Page.progressCounter or 1.5)
     app.ui.progressDisplayValue(app.dialogs.progressCounter)
-    if (ofs3.clock - app.dialogs.progressWatchDog) > 5 then
+    if (os.clock() - app.dialogs.progressWatchDog) > 5 then
       app.audio.playTimeout = true
       app.ui.progressDisplayMessage(i18n("app.error_timed_out"))
       app.ui.progressDisplayCloseAllowed(true)
@@ -1160,10 +1160,6 @@ app._taskAccumulator    = 0   -- desired throughput percentage of total tasks pe
 app._uiTaskPercent      = 50  -- e.g., 50% of tasks each tick
 function app.wakeup()
 
-  -- ensure we have a clock if background tasks are not active
-  if not ofs3.tasks.active() then
-    ofs3.clock = os.clock()  
-  end
 
   local total = #app._uiTasks
   local tasksThisTick = math.max(1, (total * app._uiTaskPercent) / 100)

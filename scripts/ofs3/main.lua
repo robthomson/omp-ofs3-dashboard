@@ -21,9 +21,6 @@
 ofs3 = {}
 ofs3.session = {}
 
--- initialise global clock
-ofs3.clock = os.clock()
-
 -- initialise legacy font if not already set (ethos 1.6 vs 1.7)
 if not FONT_M then FONT_M = FONT_STD end
 

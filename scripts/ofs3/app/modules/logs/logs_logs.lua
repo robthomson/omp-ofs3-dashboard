@@ -2,9 +2,9 @@ local utils = assert(ofs3.compiler.loadfile("SCRIPTS:/" .. ofs3.config.baseDir .
 local i18n = ofs3.i18n.get
 local triggerOverRide = false
 local triggerOverRideAll = false
-local lastServoCountTime = ofs3.clock
+local lastServoCountTime = os.clock()
 local enableWakeup = false
-local wakeupScheduler = ofs3.clock
+local wakeupScheduler = os.clock()
 local currentDisplayMode
 
 local function getCleanModelName()

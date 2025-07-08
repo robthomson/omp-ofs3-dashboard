@@ -57,7 +57,7 @@ function telemetry._debugStats()
 end
 
 -- Rate‐limiting for wakeup()
-local sensorRateLimit = ofs3.clock
+local sensorRateLimit = os.clock()
 local ONCHANGE_RATE = 0.5        -- 1 second between onchange scans
 
 -- Store the last validated sensors and timestamp
@@ -557,7 +557,7 @@ end
         - The function considers the mandatory flag for invalid sensors.
 ]]
 function telemetry.validateSensors(returnValid)
-    local now = ofs3.clock
+    local now = os.clock()
     if (now - lastValidationTime) < VALIDATION_RATE_LIMIT then
         return lastValidationResult
     end
@@ -643,7 +643,7 @@ end
     - Reset telemetry if needed
 ]]
 function telemetry.wakeup()
-    local now = ofs3.clock
+    local now = os.clock()
 
     -- Rate‐limited “onchange” scanning (every ONCHANGE_RATE seconds)
     if (now - sensorRateLimit) >= ONCHANGE_RATE then

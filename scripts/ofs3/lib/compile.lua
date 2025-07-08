@@ -28,7 +28,7 @@
 local compile = {}
 local arg = {...}
 
-compile._startTime = ofs3.clock
+compile._startTime = os.clock()
 compile._startupDelay = 15 -- seconds before starting any compiles
 
 -- Configuration: expects ofs3.config to be globally available
@@ -102,7 +102,7 @@ local function LRUCache()
   end
 
   function self:evict_if_low_memory()
-    self._last_evict = ofs3.clock
+    self._last_evict = os.clock()
     local usage = system.getMemoryUsage and system.getMemoryUsage()
     while #self.order > 0 do
       if usage and usage.luaRamAvailable and usage.luaRamAvailable < LUA_RAM_THRESHOLD then
@@ -132,7 +132,7 @@ local function LRUCache()
     end
     self.cache[key] = value
 
-    local now = ofs3.clock
+    local now = os.clock()
     if now - self._last_evict > EVICT_INTERVAL then
       self:evict_if_low_memory()
     end
@@ -157,7 +157,7 @@ function compile._enqueue(script, cache_path, cache_fname)
 end
 
 function compile.wakeup()
-  local now = ofs3.clock
+  local now = os.clock()
   if (now - compile._startTime) < compile._startupDelay then
     return
   end
@@ -183,7 +183,7 @@ end
 function compile.loadfile(script)
   local startTime
   if logTimings then
-    startTime = ofs3.clock
+    startTime = os.clock()
   end
 
   local loader, which

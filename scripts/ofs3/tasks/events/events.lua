@@ -33,7 +33,7 @@ for _, name in ipairs(taskNames) do
 end
 
 function events.wakeup()
-    local currentTime = ofs3.clock
+    local currentTime = os.clock()
 
     if ofs3.session.isConnected and ofs3.session.telemetryState then
         if telemetryStartTime == nil then

@@ -34,7 +34,7 @@ function ui.progressDisplay(title, message)
     message = message or i18n("app.msg_loading_from_fbl")
 
     ofs3.app.dialogs.progressDisplay = true
-    ofs3.app.dialogs.progressWatchDog = ofs3.clock
+    ofs3.app.dialogs.progressWatchDog = os.clock()
     ofs3.app.dialogs.progress = form.openProgressDialog(
                                 {
                                 title = title, 
@@ -142,7 +142,7 @@ end
 ]]
 function ui.progressDisplaySave(message)
     ofs3.app.dialogs.saveDisplay = true
-    ofs3.app.dialogs.saveWatchDog = ofs3.clock
+    ofs3.app.dialogs.saveWatchDog = os.clock()
     local title = i18n("app.msg_saving")
     if not message then
         message = i18n("app.msg_saving_to_fbl")
@@ -193,7 +193,7 @@ function ui.progressDisplayValue(value, message)
         return
     end
 
-    local now = ofs3.clock
+    local now = os.clock()
     if (now - ofs3.app.dialogs.progressRateLimit) >= ofs3.app.dialogs.progressRate then
         ofs3.app.dialogs.progressRateLimit = now
         ofs3.app.dialogs.progress:value(value)
@@ -217,7 +217,7 @@ function ui.progressDisplaySaveValue(value, message)
         return
     end
 
-    local now = ofs3.clock
+    local now = os.clock()
     if (now - ofs3.app.dialogs.saveRateLimit) >= ofs3.app.dialogs.saveRate then
         ofs3.app.dialogs.saveRateLimit = now
         if ofs3.app.dialogs.save then

@@ -42,9 +42,9 @@ local supportedResolutions = {
 local lastFlightMode = nil
 
 -- Capture the script start time for uptime or performance measurements
-local initTime = ofs3.clock
+local initTime = os.clock()
 
-local lastWakeup = ofs3.clock
+local lastWakeup = os.clock()
 
 -- Default theme to fall back on if user or system theme fails to load
 dashboard.DEFAULT_THEME = "system/default"
@@ -255,7 +255,7 @@ function dashboard.computeOverlayMessage()
     
 
     if dashboard.themeFallbackUsed and dashboard.themeFallbackUsed[state] and
-       (ofs3.clock - (dashboard.themeFallbackTime and dashboard.themeFallbackTime[state] or 0)) < 10 then
+       (os.clock() - (dashboard.themeFallbackTime and dashboard.themeFallbackTime[state] or 0)) < 10 then
         return i18n("widgets.dashboard.theme_load_error")
     elseif not utils.ethosVersionAtLeast() then
         return string.format(
@@ -432,8 +432,8 @@ function dashboard.renderLayout(widget, config)
     ----------------------------------------------------------------
     -- PHASE 2: Spinner Until First Wakeup Pass Completes
     ----------------------------------------------------------------
-    dashboard._loader_start_time = dashboard._loader_start_time or ofs3.clock
-    local loaderElapsed = ofs3.clock - dashboard._loader_start_time
+    dashboard._loader_start_time = dashboard._loader_start_time or os.clock()
+    local loaderElapsed = os.clock() - dashboard._loader_start_time
     if objectsThreadedWakeupCount < 1 or loaderElapsed < dashboard._loader_min_duration then
         dashboard.loader(0, 0, W, H)
         lcd.invalidate()
@@ -528,7 +528,7 @@ local function load_state_script(theme_folder, state, isFallback)
         end
         -- default is broken too
         dashboard.themeFallbackUsed[state] = true
-        dashboard.themeFallbackTime[state] = ofs3.clock
+        dashboard.themeFallbackTime[state] = os.clock()
         return nil
     end
 
@@ -543,7 +543,7 @@ local function load_state_script(theme_folder, state, isFallback)
             return load_state_script(dashboard.DEFAULT_THEME, state, true)
         end
         dashboard.themeFallbackUsed[state] = true
-        dashboard.themeFallbackTime[state] = ofs3.clock
+        dashboard.themeFallbackTime[state] = os.clock()
         return nil
     end
 
@@ -554,7 +554,7 @@ local function load_state_script(theme_folder, state, isFallback)
             return load_state_script(dashboard.DEFAULT_THEME, state, true)
         end
         dashboard.themeFallbackUsed[state] = true
-        dashboard.themeFallbackTime[state] = ofs3.clock
+        dashboard.themeFallbackTime[state] = os.clock()
         return nil
     end
 
@@ -573,13 +573,13 @@ local function load_state_script(theme_folder, state, isFallback)
         -- even default missing? give up
         log("dashboard: Could not load "..scriptName.." for "..folder.." or default: "..tostring(chunkErr), "info")
         dashboard.themeFallbackUsed[state] = true
-        dashboard.themeFallbackTime[state] = ofs3.clock
+        dashboard.themeFallbackTime[state] = os.clock()
         return nil
     end
 
     -- at this point, we successfully have a chunk; mark no fallback
     dashboard.themeFallbackUsed[state] = (isFallback == true)
-    dashboard.themeFallbackTime[state] = isFallback and ofs3.clock or 0
+    dashboard.themeFallbackTime[state] = isFallback and os.clock() or 0
     setPath()
 
     -- if standalone, return the chunk itself; otherwise run it and return module
@@ -592,7 +592,7 @@ local function load_state_script(theme_folder, state, isFallback)
                 return load_state_script(dashboard.DEFAULT_THEME, state, true)
             end
             dashboard.themeFallbackUsed[state] = true
-            dashboard.themeFallbackTime[state] = ofs3.clock
+            dashboard.themeFallbackTime[state] = os.clock()
             return nil
         end
         return module
@@ -912,10 +912,6 @@ end
 -- @param widget The widget instance to update.
 function dashboard.wakeup(widget)
 
-    if not ofs3.tasks.active() then
-        ofs3.clock = os.clock()
-    end
-
     local telemetry = tasks.telemetry
     local W, H = lcd.getWindowSize()
 
@@ -973,7 +969,7 @@ function dashboard.wakeup(widget)
         end
     end
 
-    local now = ofs3.clock
+    local now = os.clock()
     local visible = lcd.isVisible()
 
     -- slow down if not visible to give priority to other tasks
@@ -1063,9 +1059,9 @@ function dashboard.wakeup(widget)
 
     if lcd.isVisible() then
         dashboard._lastMemReport = dashboard._lastMemReport or 0
-        if ofs3.clock - dashboard._lastMemReport > 5 then
+        if os.clock() - dashboard._lastMemReport > 5 then
             ofs3.utils.reportMemoryUsage("Dashboard")
-            dashboard._lastMemReport = ofs3.clock
+            dashboard._lastMemReport = os.clock()
         end
     end
 end

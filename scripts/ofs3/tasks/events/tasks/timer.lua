@@ -44,7 +44,7 @@ function timer.wakeup()
 
     -- If flight time exceeds or equals the target, handle beeping
     if modelFlightTime >= targetSeconds then
-        local now = ofs3.clock
+        local now = os.clock()
         if not triggered then
             ofs3.utils.playFileCommon("beep.wav")
             triggered = true

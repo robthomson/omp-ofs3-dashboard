@@ -98,7 +98,7 @@ function tasks.wakeup()
         tasks.findTasks()
     end
 
-    local now = ofs3.clock
+    local now = os.clock()
 
     -- Run each task
     for name, task in pairs(tasksList) do

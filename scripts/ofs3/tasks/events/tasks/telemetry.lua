@@ -97,7 +97,7 @@ local eventTable = {
 }
 
 function telemetry.wakeup()
-    local now = ofs3.clock
+    local now = os.clock()
 
     for _, item in ipairs(eventTable) do
         local key = item.sensor
