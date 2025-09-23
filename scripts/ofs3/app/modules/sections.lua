@@ -20,7 +20,7 @@
 ]] --
 local sections = {}
 
-
+ 
 sections[#sections + 1] = {title = "@i18n(app.menu_section_tools)@", id = "tools"}
 
 return sections
