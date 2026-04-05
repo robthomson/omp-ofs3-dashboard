@@ -9,17 +9,71 @@ local utils = {}
 
 local imageCache = {}
 local fontCache
+local DASHBOARD_RESOLUTION_TOLERANCE = 12
+local DASHBOARD_SUPPORTED_RESOLUTIONS = {
+    {784, 294}, {784, 316}, {800, 458}, {800, 480},
+    {472, 191}, {472, 210}, {480, 301}, {480, 320},
+    {630, 236}, {630, 258}, {640, 338}, {640, 360}
+}
+local DASHBOARD_THEME_WIDTHS = {800, 784, 640, 630, 480, 472}
+
+local function resolveDashboardSize(W, H)
+    local version = system.getVersion and system.getVersion() or {}
+    W = tonumber(W) or tonumber(version.lcdWidth) or 800
+    H = tonumber(H) or tonumber(version.lcdHeight) or 480
+    return W, H
+end
+
+local function findClosestDashboardResolution(W, H, supportedResolutions)
+    W, H = resolveDashboardSize(W, H)
+    local bestRes, bestDistance
+    local resolutions = supportedResolutions or DASHBOARD_SUPPORTED_RESOLUTIONS
+
+    for _, res in ipairs(resolutions) do
+        local distance = math.abs(W - res[1]) + math.abs(H - res[2])
+        if bestDistance == nil or distance < bestDistance then
+            bestRes = res
+            bestDistance = distance
+        end
+    end
+
+    return bestRes, bestDistance
+end
+
+local function getClosestDashboardWidth(W)
+    W = select(1, resolveDashboardSize(W, nil))
+    local bestWidth, bestDistance
+
+    for i = 1, #DASHBOARD_THEME_WIDTHS do
+        local width = DASHBOARD_THEME_WIDTHS[i]
+        local distance = math.abs(W - width)
+        if bestDistance == nil or distance < bestDistance then
+            bestWidth = width
+            bestDistance = distance
+        end
+    end
+
+    return bestWidth
+end
+
+function utils.matchSupportedResolution(W, H, supportedResolutions, maxDistance)
+    W, H = resolveDashboardSize(W, H)
+    local bestRes, bestDistance = findClosestDashboardResolution(W, H, supportedResolutions)
+    local tolerance = maxDistance or DASHBOARD_RESOLUTION_TOLERANCE
+
+    if bestRes and bestDistance ~= nil and bestDistance <= tolerance then
+        return bestRes[1], bestRes[2], bestDistance
+    end
+
+    return nil
+end
 
 function utils.isFullScreen(w, h)
+    w, h = resolveDashboardSize(w, h)
+    local matchedW = utils.matchSupportedResolution(w, h)
 
-    if (w == 800 and (h == 458 or h == 480)) then return true end
-    if (w == 784 and (h == 294 or h == 316)) then return false end
-
-    if (w == 480 and (h == 301 or h == 320)) then return true end
-    if (w == 472 and (h == 191 or h == 210)) then return false end
-
-    if (w == 640 and (h == 338 or h == 360)) then return true end
-    if (w == 630 and (h == 236 or h == 258)) then return false end
+    if matchedW == 800 or matchedW == 480 or matchedW == 640 then return true end
+    if matchedW == 784 or matchedW == 472 or matchedW == 630 then return false end
 
     return nil
 end
@@ -29,9 +83,7 @@ function utils.isModelPrefsReady() return ofs3 and ofs3.session and ofs3.session
 function utils.resetBoxCache(box) if box._cache then for k in pairs(box._cache) do box._cache[k] = nil end end end
 
 function utils.supportedResolution(W, H, supportedResolutions)
-
-    for _, res in ipairs(supportedResolutions) do if W == res[1] and H == res[2] then return true end end
-    return false
+    return utils.matchSupportedResolution(W, H, supportedResolutions) ~= nil
 end
 
 function utils.drawBarNeedle(cx, cy, length, thickness, angleDeg, color)
@@ -72,8 +124,10 @@ end
 
 function utils.getHeaderOptions()
     local W, H = lcd.getWindowSize()
+    W, H = resolveDashboardSize(W, H)
+    local matchedW = getClosestDashboardWidth(W)
 
-    if W == 800 or W == 784 then
+    if matchedW == 800 or matchedW == 784 then
         return {
             height = 36,
             font = "FONT_L",
@@ -93,7 +147,7 @@ function utils.getHeaderOptions()
             valuepaddingbottom = 20
         }
 
-    elseif W == 480 or W == 472 then
+    elseif matchedW == 480 or matchedW == 472 then
         return {
             height = 30,
             font = "FONT_L",
@@ -112,7 +166,7 @@ function utils.getHeaderOptions()
             valuepaddingbottom = 20
         }
 
-    elseif W == 640 or W == 630 then
+    elseif matchedW == 640 or matchedW == 630 then
         return {
             height = 30,
             font = "FONT_L",
@@ -131,6 +185,25 @@ function utils.getHeaderOptions()
             valuepaddingbottom = 20
         }
     end
+
+    return {
+        height = 36,
+        font = "FONT_L",
+        batterysegmentpaddingtop = 4,
+        batterysegmentpaddingbottom = 4,
+        batterysegmentpaddingleft = 4,
+        batterysegmentpaddingright = 4,
+        gaugepaddingleft = 25,
+        gaugepaddingright = 26,
+        gaugepaddingbottom = 2,
+        gaugepaddingtop = 2,
+        barpaddingleft = 25,
+        barpaddingright = 28,
+        barpaddingbottom = 2,
+        barpaddingtop = 4,
+        valuepaddingleft = 20,
+        valuepaddingbottom = 20
+    }
 end
 
 function utils.resetImageCache() for k in pairs(imageCache) do imageCache[k] = nil end end
