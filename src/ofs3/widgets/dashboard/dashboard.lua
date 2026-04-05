@@ -30,6 +30,7 @@ local gestureStartY = 0
 local gestureTriggered = false
 local GESTURE_MIN_DY = 20
 local GESTURE_MAX_DX = 40
+local TOOLBAR_TIMEOUT = 5.0
 
 dashboard.title = false
 dashboard.renders = {}
@@ -39,6 +40,23 @@ dashboard._moduleCache = {}
 dashboard.toolbarVisible = dashboard.toolbarVisible or false
 dashboard.selectedToolbarIndex = dashboard.selectedToolbarIndex or nil
 dashboard.requestLogViewer = false
+dashboard.toolbarLastActivityAt = dashboard.toolbarLastActivityAt or 0
+
+function dashboard.touchToolbar()
+    dashboard.toolbarLastActivityAt = os.clock()
+end
+
+function dashboard.openToolbar()
+    dashboard.toolbarVisible = true
+    dashboard.selectedToolbarIndex = dashboard.selectedToolbarIndex or 1
+    dashboard.touchToolbar()
+end
+
+function dashboard.closeToolbar()
+    dashboard.toolbarVisible = false
+    dashboard.selectedToolbarIndex = nil
+    dashboard.toolbarLastActivityAt = 0
+end
 
 local function getBoxSize(box, boxWidth, boxHeight, padding, widgetW, widgetH)
     if box.w_pct and box.h_pct then
@@ -295,8 +313,7 @@ function dashboard.resetFlightModeAsk()
                 if ofs3.runtime and ofs3.runtime.resetFlight then
                     ofs3.runtime.resetFlight()
                 end
-                dashboard.toolbarVisible = false
-                dashboard.selectedToolbarIndex = nil
+                dashboard.closeToolbar()
                 dashboard.requestLogViewer = false
                 if lcd.invalidate then
                     lcd.invalidate()
@@ -341,8 +358,7 @@ end
 function dashboard.wakeup(widget)
     if dashboard.requestLogViewer and dashboard.logviewer and dashboard.logviewer.open then
         dashboard.requestLogViewer = false
-        dashboard.toolbarVisible = false
-        dashboard.selectedToolbarIndex = nil
+        dashboard.closeToolbar()
         dashboard.logviewer.open(widget)
     end
 
@@ -380,6 +396,11 @@ function dashboard.wakeup(widget)
 
     ensureState()
 
+    if dashboard.toolbarVisible and dashboard.toolbarLastActivityAt > 0 and (now - dashboard.toolbarLastActivityAt) >= TOOLBAR_TIMEOUT then
+        dashboard.closeToolbar()
+        lcd.invalidate(widget)
+    end
+
     if wakeObjects() or runtimeState.flightmode_changed or (now - lastInvalidateAt) >= invalidateInterval then
         forceFullRepaint = false
         lastInvalidateAt = now
@@ -397,8 +418,7 @@ function dashboard.event(widget, category, value, x, y)
     end
 
     if category == EVT_KEY and value == KEY_PAGE_LONG and lcd.hasFocus() then
-        dashboard.toolbarVisible = true
-        dashboard.selectedToolbarIndex = dashboard.selectedToolbarIndex or 1
+        dashboard.openToolbar()
         lcd.invalidate(widget)
         if system.killEvents then
             system.killEvents(value)
@@ -430,14 +450,12 @@ function dashboard.event(widget, category, value, x, y)
             if math.abs(dx) <= GESTURE_MAX_DX then
                 if dy <= -GESTURE_MIN_DY then
                     gestureTriggered = true
-                    dashboard.toolbarVisible = true
-                    dashboard.selectedToolbarIndex = dashboard.selectedToolbarIndex or 1
+                    dashboard.openToolbar()
                     lcd.invalidate(widget)
                     return true
                 elseif dy >= GESTURE_MIN_DY then
                     gestureTriggered = true
-                    dashboard.toolbarVisible = false
-                    dashboard.selectedToolbarIndex = nil
+                    dashboard.closeToolbar()
                     lcd.invalidate(widget)
                     return true
                 end

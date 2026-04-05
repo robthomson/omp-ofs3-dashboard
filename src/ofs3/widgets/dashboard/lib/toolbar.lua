@@ -121,6 +121,9 @@ function toolbar.handleEvent(dashboard, widget, category, value, x, y)
     end
 
     if category == EVT_KEY and lcd.hasFocus() then
+        if dashboard.touchToolbar then
+            dashboard.touchToolbar()
+        end
         local selected = dashboard.selectedToolbarIndex or 1
 
         if value == ROTARY_LEFT then
@@ -153,14 +156,21 @@ function toolbar.handleEvent(dashboard, widget, category, value, x, y)
         end
 
         if value == KEY_DOWN_BREAK or value == KEY_RTN_BREAK then
-            dashboard.toolbarVisible = false
-            dashboard.selectedToolbarIndex = nil
+            if dashboard.closeToolbar then
+                dashboard.closeToolbar()
+            else
+                dashboard.toolbarVisible = false
+                dashboard.selectedToolbarIndex = nil
+            end
             lcd.invalidate(widget)
             return true
         end
     end
 
     if category == EVT_TOUCH and (value == TOUCH_END or value == TOUCH_START) and x and y then
+        if dashboard.touchToolbar then
+            dashboard.touchToolbar()
+        end
         for index, rect in ipairs(rects) do
             if x >= rect.x and x < (rect.x + rect.w) and y >= rect.y and y < (rect.y + rect.h) then
                 dashboard.selectedToolbarIndex = index
