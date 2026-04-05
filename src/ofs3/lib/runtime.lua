@@ -28,6 +28,16 @@ local modelPreferenceDefaults = {
         totalflighttime = 0,
         lastflighttime = 0
     },
+    battery = {
+        batteryCapacity = 750,
+        batteryCellCount = 3,
+        vbatwarningcellvoltage = 3.5,
+        vbatmincellvoltage = 3.3,
+        vbatmaxcellvoltage = 4.3,
+        vbatfullcellvoltage = 4.1,
+        lvcPercentage = 30,
+        consumptionWarningPercentage = 30
+    },
     ["system/@default"] = {
         tx_min = 7.2,
         tx_warn = 7.4,
@@ -62,7 +72,7 @@ local function getModelKey()
     return ofs3.utils.sanitize_filename(raw)
 end
 
-local function loadModelPreferences(modelKey)
+local function resolvePreferencePaths(modelKey)
     local prefDir = "SCRIPTS:/" .. ofs3.config.preferences
     local modelsDir = prefDir .. "/models"
     local prefFile = modelsDir .. "/" .. modelKey .. ".ini"
@@ -70,15 +80,45 @@ local function loadModelPreferences(modelKey)
     os.mkdir(prefDir)
     os.mkdir(modelsDir)
 
+    return prefFile
+end
+
+local function loadModelPreferencesData(modelKey)
+    local prefFile = resolvePreferencePaths(modelKey)
+
     local existing = ofs3.ini.load_ini_file(prefFile) or {}
     local merged = ofs3.ini.merge_ini_tables(existing, modelPreferenceDefaults)
-
-    ofs3.session.modelPreferences = merged
-    ofs3.session.modelPreferencesFile = prefFile
 
     if not ofs3.ini.ini_tables_equal(existing, merged) then
         ofs3.ini.save_ini_file(prefFile, merged)
     end
+
+    return merged, prefFile
+end
+
+local function buildBatteryConfig(prefs)
+    local battery = copyTable(defaultBatteryConfig)
+    local stored = prefs and prefs.battery or {}
+
+    for key, defaultValue in pairs(defaultBatteryConfig) do
+        local value = stored[key]
+        if type(defaultValue) == "number" then
+            value = tonumber(value)
+        end
+        if value ~= nil then
+            battery[key] = value
+        end
+    end
+
+    return battery
+end
+
+local function loadModelPreferences(modelKey)
+    local merged, prefFile = loadModelPreferencesData(modelKey)
+
+    ofs3.session.modelPreferences = merged
+    ofs3.session.modelPreferencesFile = prefFile
+    ofs3.session.batteryConfig = buildBatteryConfig(merged)
 end
 
 local function resetTimer()
@@ -115,7 +155,6 @@ local function initializeModel(modelKey)
 
     ofs3.session.mcu_id = modelKey
     ofs3.session.craftName = model.name and model.name() or "Model"
-    ofs3.session.batteryConfig = copyTable(defaultBatteryConfig)
 
     loadModelPreferences(modelKey)
     resetTimer()
@@ -131,6 +170,81 @@ local function initializeModel(modelKey)
     lastStatsAt = 0
     channelSources = {}
     rxInitializedForProtocol = nil
+end
+
+local function clamp(value, minimum, maximum)
+    if value < minimum then
+        return minimum
+    end
+    if value > maximum then
+        return maximum
+    end
+    return value
+end
+
+local function normalizeBatterySettings(input)
+    local output = copyTable(defaultBatteryConfig)
+
+    if type(input) ~= "table" then
+        return output
+    end
+
+    output.batteryCellCount = clamp(math.floor(tonumber(input.batteryCellCount) or output.batteryCellCount), 1, 14)
+    output.batteryCapacity = clamp(math.floor(tonumber(input.batteryCapacity) or output.batteryCapacity), 100, 20000)
+    output.vbatmincellvoltage = clamp(tonumber(input.vbatmincellvoltage) or output.vbatmincellvoltage, 2.5, 4.2)
+    output.vbatwarningcellvoltage = clamp(tonumber(input.vbatwarningcellvoltage) or output.vbatwarningcellvoltage, output.vbatmincellvoltage + 0.05, 4.35)
+    output.vbatfullcellvoltage = clamp(tonumber(input.vbatfullcellvoltage) or output.vbatfullcellvoltage, output.vbatwarningcellvoltage, 4.35)
+    output.vbatmaxcellvoltage = clamp(tonumber(input.vbatmaxcellvoltage) or output.vbatmaxcellvoltage, output.vbatfullcellvoltage, 4.5)
+    output.lvcPercentage = clamp(math.floor(tonumber(input.lvcPercentage) or output.lvcPercentage), 0, 80)
+    output.consumptionWarningPercentage = clamp(math.floor(tonumber(input.consumptionWarningPercentage) or output.consumptionWarningPercentage), 0, 80)
+
+    return output
+end
+
+function runtime.readWidgetSettings(widget)
+    local modelKey = getModelKey()
+    local prefs, prefFile = loadModelPreferencesData(modelKey)
+    local battery = normalizeBatterySettings(buildBatteryConfig(prefs))
+
+    if widget then
+        for key, value in pairs(battery) do
+            widget[key] = value
+        end
+        widget._modelKey = modelKey
+        widget._preferencesFile = prefFile
+    end
+
+    if currentModelKey == modelKey then
+        ofs3.session.modelPreferences = prefs
+        ofs3.session.modelPreferencesFile = prefFile
+        ofs3.session.batteryConfig = copyTable(battery)
+    end
+
+    return battery, prefs, prefFile, modelKey
+end
+
+function runtime.writeWidgetSettings(widget)
+    local modelKey = (widget and widget._modelKey) or getModelKey()
+    local prefs, prefFile = loadModelPreferencesData(modelKey)
+    local battery = normalizeBatterySettings(widget or {})
+
+    prefs.battery = prefs.battery or {}
+    for key, value in pairs(battery) do
+        prefs.battery[key] = value
+        if widget then
+            widget[key] = value
+        end
+    end
+
+    ofs3.ini.save_ini_file(prefFile, prefs)
+
+    if currentModelKey == modelKey then
+        ofs3.session.modelPreferences = prefs
+        ofs3.session.modelPreferencesFile = prefFile
+        ofs3.session.batteryConfig = copyTable(battery)
+    end
+
+    return true
 end
 
 local function initializeRxMap(protocol)

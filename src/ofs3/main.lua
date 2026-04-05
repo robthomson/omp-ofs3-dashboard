@@ -55,17 +55,22 @@ ofs3.sensors = assert(loadfile("lib/sensors.lua"))(ofs3.config)
 ofs3.events = assert(loadfile("lib/events.lua"))(ofs3.config)
 ofs3.runtime = assert(loadfile("lib/runtime.lua"))(ofs3.config)
 ofs3.widgets.dashboard = assert(loadfile("widgets/dashboard/dashboard.lua"))(ofs3.config)
+ofs3.widgets.dashboardConfigure = assert(loadfile("widgets/dashboard/configure.lua"))(ofs3.config)
 
 local function init()
     local dashboard = ofs3.widgets.dashboard
+    local dashboardConfigure = ofs3.widgets.dashboardConfigure
 
     system.registerWidget({
         key = "ofs3dsh",
         name = "OFS3 Dashboard",
         create = dashboard.create,
+        configure = dashboardConfigure.configure,
         paint = dashboard.paint,
         event = dashboard.event,
         wakeup = dashboard.wakeup,
+        read = dashboardConfigure.read,
+        write = dashboardConfigure.write,
         title = false,
         persistent = false
     })
