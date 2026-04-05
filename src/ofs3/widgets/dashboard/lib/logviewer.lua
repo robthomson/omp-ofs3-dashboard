@@ -267,7 +267,7 @@ end
 
 local function refreshEntries()
     state.entries = ofs3.logs.getRecentEntries()
-    state.selectedListIndex = clamp(state.selectedListIndex or 1, 1, math.max(1, #state.entries))
+    state.selectedListIndex = clamp(state.selectedListIndex or 1, 0, math.max(1, #state.entries))
     state.listScroll = clamp(state.listScroll or 0, 0, math.max(0, #state.entries - 1))
 end
 
@@ -574,10 +574,12 @@ local function ensureSelectionVisible(visibleRows)
     local maxScroll = math.max(0, #state.entries - visibleRows)
     state.listScroll = clamp(state.listScroll or 0, 0, maxScroll)
 
-    local selected = clamp(state.selectedListIndex or 1, 1, math.max(1, #state.entries))
+    local selected = clamp(state.selectedListIndex or 1, 0, math.max(1, #state.entries))
     state.selectedListIndex = selected
 
-    if selected <= state.listScroll then
+    if selected == 0 then
+        state.listScroll = 0
+    elseif selected <= state.listScroll then
         state.listScroll = selected - 1
     elseif selected > (state.listScroll + visibleRows) then
         state.listScroll = selected - visibleRows
@@ -588,16 +590,21 @@ end
 
 local function moveSelection(delta, visibleRows)
     if #state.entries == 0 then
-        state.selectedListIndex = 1
+        state.selectedListIndex = 0
         state.listScroll = 0
         return
     end
 
-    state.selectedListIndex = clamp((state.selectedListIndex or 1) + delta, 1, #state.entries)
+    state.selectedListIndex = clamp((state.selectedListIndex or 1) + delta, 0, #state.entries)
     ensureSelectionVisible(visibleRows)
 end
 
 local function openSelectedEntry()
+    if (state.selectedListIndex or 0) == 0 then
+        closeViewer()
+        return
+    end
+
     local entry = state.entries[state.selectedListIndex or 1]
     if entry then
         queueLogLoad(entry.name)
@@ -766,7 +773,7 @@ local function paintList(theme, width, height)
     lcd.drawFilledRectangle(metrics.margin, topBarY, 4, metrics.topBarHeight)
 
     state.hitboxes.list.back = {x = metrics.margin + 8, y = topBarY + 4, w = 74, h = metrics.topBarHeight - 8}
-    drawButton(state.hitboxes.list.back.x, state.hitboxes.list.back.y, state.hitboxes.list.back.w, state.hitboxes.list.back.h, "Back", false, theme, FONT_XXS, true, false)
+    drawButton(state.hitboxes.list.back.x, state.hitboxes.list.back.y, state.hitboxes.list.back.w, state.hitboxes.list.back.h, "Back", (state.selectedListIndex or 1) == 0, theme, FONT_XXS, true, false)
 
     lcd.font(FONT_XS)
     lcd.color(theme.text)
