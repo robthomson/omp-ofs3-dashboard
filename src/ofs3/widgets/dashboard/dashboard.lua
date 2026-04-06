@@ -28,6 +28,7 @@ local gestureActive = false
 local gestureStartX = 0
 local gestureStartY = 0
 local gestureTriggered = false
+local gestureConsumeUntilTouchEnd = false
 local GESTURE_MIN_DY = 20
 local GESTURE_MAX_DX = 40
 local TOOLBAR_TIMEOUT = 5.0
@@ -75,6 +76,24 @@ local function logWidgetMenu(action)
     local flightMode = ofs3.flightmode and ofs3.flightmode.current or "preflight"
 
     ofs3.utils.log(string.format("Widget menu %s: craft=%s flightmode=%s telemetry=%s flights=%d total=%s", tostring(action), tostring(craftName), tostring(flightMode), telemetryState, flightCount, totalFlightText))
+end
+
+local function consumeTouchSequence(value)
+    if not system.killEvents then
+        return
+    end
+
+    if value ~= nil then
+        system.killEvents(value)
+    end
+
+    if TOUCH_START then
+        system.killEvents(TOUCH_START)
+    end
+
+    if value == TOUCH_END and TOUCH_END then
+        system.killEvents(TOUCH_END)
+    end
 end
 
 local function getBoxSize(box, boxWidth, boxHeight, padding, widgetW, widgetH)
@@ -459,6 +478,16 @@ function dashboard.event(widget, category, value, x, y)
         return dashboard.logviewer.event(widget, category, value, x, y)
     end
 
+    if gestureConsumeUntilTouchEnd and category == EVT_TOUCH then
+        consumeTouchSequence(value)
+        if value == TOUCH_END then
+            gestureConsumeUntilTouchEnd = false
+            gestureActive = false
+            gestureTriggered = false
+        end
+        return true
+    end
+
     if dashboard.toolbar and dashboard.toolbar.handleEvent and dashboard.toolbar.handleEvent(dashboard, widget, category, value, x, y) then
         return true
     end
@@ -496,11 +525,15 @@ function dashboard.event(widget, category, value, x, y)
             if math.abs(dx) <= GESTURE_MAX_DX then
                 if dy <= -GESTURE_MIN_DY then
                     gestureTriggered = true
+                    gestureConsumeUntilTouchEnd = true
+                    consumeTouchSequence(TOUCH_START)
                     dashboard.openToolbar()
                     lcd.invalidate(widget)
                     return true
                 elseif dy >= GESTURE_MIN_DY then
                     gestureTriggered = true
+                    gestureConsumeUntilTouchEnd = true
+                    consumeTouchSequence(TOUCH_START)
                     dashboard.closeToolbar()
                     lcd.invalidate(widget)
                     return true
