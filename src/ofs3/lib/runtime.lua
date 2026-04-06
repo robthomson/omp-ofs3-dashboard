@@ -22,6 +22,11 @@ local defaultBatteryConfig = {
     consumptionWarningPercentage = 30
 }
 
+local configurableBatteryFields = {
+    batteryCapacity = true,
+    batteryCellCount = true
+}
+
 local modelPreferenceDefaults = {
     general = {
         flightcount = 0,
@@ -122,12 +127,14 @@ local function buildBatteryConfig(prefs)
     local stored = prefs and prefs.battery or {}
 
     for key, defaultValue in pairs(defaultBatteryConfig) do
-        local value = stored[key]
-        if type(defaultValue) == "number" then
-            value = tonumber(value)
-        end
-        if value ~= nil then
-            battery[key] = value
+        if configurableBatteryFields[key] then
+            local value = stored[key]
+            if type(defaultValue) == "number" then
+                value = tonumber(value)
+            end
+            if value ~= nil then
+                battery[key] = value
+            end
         end
     end
 
@@ -213,12 +220,6 @@ local function normalizeBatterySettings(input)
 
     output.batteryCellCount = clamp(math.floor(tonumber(input.batteryCellCount) or output.batteryCellCount), 1, 14)
     output.batteryCapacity = clamp(math.floor(tonumber(input.batteryCapacity) or output.batteryCapacity), 100, 20000)
-    output.vbatmincellvoltage = clamp(tonumber(input.vbatmincellvoltage) or output.vbatmincellvoltage, 2.5, 4.2)
-    output.vbatwarningcellvoltage = clamp(tonumber(input.vbatwarningcellvoltage) or output.vbatwarningcellvoltage, output.vbatmincellvoltage + 0.05, 4.35)
-    output.vbatfullcellvoltage = clamp(tonumber(input.vbatfullcellvoltage) or output.vbatfullcellvoltage, output.vbatwarningcellvoltage, 4.35)
-    output.vbatmaxcellvoltage = clamp(tonumber(input.vbatmaxcellvoltage) or output.vbatmaxcellvoltage, output.vbatfullcellvoltage, 4.5)
-    output.lvcPercentage = clamp(math.floor(tonumber(input.lvcPercentage) or output.lvcPercentage), 0, 80)
-    output.consumptionWarningPercentage = clamp(math.floor(tonumber(input.consumptionWarningPercentage) or output.consumptionWarningPercentage), 0, 80)
 
     return output
 end
