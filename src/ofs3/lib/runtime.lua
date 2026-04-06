@@ -52,6 +52,11 @@ local lastStatsAt = 0
 local currentTelemetryType = nil
 local channelSources = {}
 local rxInitializedForProtocol = nil
+local flightResetEventSrc = nil
+local flightResetEventSupported = (CATEGORY_SYSTEM_EVENT ~= nil and SYSTEM_EVENT_FLIGHT_RESET ~= nil)
+local flightResetEventPrimed = false
+local lastFlightResetEventState = false
+local SRC_FLIGHT_RESET = {category = CATEGORY_SYSTEM_EVENT, member = SYSTEM_EVENT_FLIGHT_RESET}
 
 local function copyTable(input)
     local out = {}
@@ -70,6 +75,22 @@ local function getModelKey()
     local name = model.name and model.name() or ""
     local raw = path ~= "" and path or name
     return ofs3.utils.sanitize_filename(raw)
+end
+
+local function normalizeSourceState(state)
+    if state == true then return true end
+    if type(state) == "number" then return state ~= 0 end
+    return false
+end
+
+local function resetFlightEventMonitor()
+    if flightResetEventSupported and system.getSource then
+        flightResetEventSrc = system.getSource(SRC_FLIGHT_RESET)
+    else
+        flightResetEventSrc = nil
+    end
+    flightResetEventPrimed = false
+    lastFlightResetEventState = false
 end
 
 local function resolvePreferencePaths(modelKey)
@@ -170,6 +191,7 @@ local function initializeModel(modelKey)
     lastStatsAt = 0
     channelSources = {}
     rxInitializedForProtocol = nil
+    resetFlightEventMonitor()
 end
 
 local function clamp(value, minimum, maximum)
@@ -419,6 +441,41 @@ local function updateStats()
     end
 end
 
+local function handleSystemFlightReset()
+    if not flightResetEventSupported or not system.getSource then
+        return false
+    end
+
+    if not flightResetEventSrc then
+        flightResetEventSrc = system.getSource(SRC_FLIGHT_RESET)
+        if not flightResetEventSrc then
+            return false
+        end
+    end
+
+    if type(flightResetEventSrc.state) ~= "function" then
+        return false
+    end
+
+    local stateNow = normalizeSourceState(flightResetEventSrc:state())
+
+    if not flightResetEventPrimed then
+        lastFlightResetEventState = stateNow
+        flightResetEventPrimed = true
+        return false
+    end
+
+    if stateNow and not lastFlightResetEventState then
+        ofs3.utils.log("[event] system flight reset")
+        runtime.resetFlight()
+        lastFlightResetEventState = stateNow
+        return true
+    end
+
+    lastFlightResetEventState = stateNow
+    return false
+end
+
 function runtime.resetFlight()
     hasBeenInFlight = false
     currentFlightMode = "preflight"
@@ -445,6 +502,7 @@ function runtime.wakeup()
     end
 
     ofs3.session.craftName = model.name and model.name() or ofs3.session.craftName
+    local systemFlightReset = handleSystemFlightReset()
 
     updateTelemetryState()
     updateRxValues(ofs3.session.telemetryType)
@@ -467,7 +525,8 @@ function runtime.wakeup()
 
     return {
         model_changed = modelChanged,
-        flightmode_changed = flightModeChanged
+        flightmode_changed = flightModeChanged or systemFlightReset,
+        flight_reset = systemFlightReset
     }
 end
 

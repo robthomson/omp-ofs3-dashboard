@@ -378,6 +378,9 @@ function dashboard.resetFlightModeAsk()
                 if ofs3.runtime and ofs3.runtime.resetFlight then
                     ofs3.runtime.resetFlight()
                 end
+                if model and type(model.resetFlight) == "function" then
+                    pcall(model.resetFlight)
+                end
                 dashboard.closeToolbar()
                 dashboard.requestLogViewer = false
                 if lcd.invalidate then
