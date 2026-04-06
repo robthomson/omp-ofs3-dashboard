@@ -56,21 +56,28 @@ local colorMode = lcd.darkMode() and darkMode or lightMode
 local theme_section = "system/@default"
 
 local THEME_DEFAULTS = {rpm_min = 0, rpm_max = 3000, bec_min = 3.0, bec_max = 13.0, esctemp_warn = 90, esctemp_max = 140, tx_min = 7.2, tx_warn = 7.4, tx_max = 8.4}
+local DEFAULT_THEME_OPTION_KEY = "ls_full"
+local themeOptionKeysByWidth = {[800] = "ls_full", [784] = "ls_std", [640] = "ss_full", [630] = "ss_std", [480] = "ms_full", [472] = "ms_std"}
+local supportedThemeWidths = {800, 784, 640, 630, 480, 472}
 
 local function getThemeOptionKey(W)
-    if W == 800 then
-        return "ls_full"
-    elseif W == 784 then
-        return "ls_std"
-    elseif W == 640 then
-        return "ss_full"
-    elseif W == 630 then
-        return "ss_std"
-    elseif W == 480 then
-        return "ms_full"
-    elseif W == 472 then
-        return "ms_std"
+    W = tonumber(W)
+    if W == nil and system.getVersion then
+        local version = system.getVersion() or {}
+        W = tonumber(version.lcdWidth)
     end
+    W = W or 800
+
+    local closestW, closestDistance
+    for _, candidate in ipairs(supportedThemeWidths) do
+        local distance = math.abs(W - candidate)
+        if closestDistance == nil or distance < closestDistance then
+            closestW = candidate
+            closestDistance = distance
+        end
+    end
+
+    return themeOptionKeysByWidth[closestW] or DEFAULT_THEME_OPTION_KEY
 end
 
 local themeOptions = {
@@ -108,7 +115,7 @@ local header_layout = {height = headeropts.height, cols = 7, rows = 1, padding =
 
 local function buildBoxes(W)
 
-    local opts = themeOptions[getThemeOptionKey(W)] or themeOptions.unknown
+    local opts = themeOptions[getThemeOptionKey(W)] or themeOptions[DEFAULT_THEME_OPTION_KEY]
 
     return {
 

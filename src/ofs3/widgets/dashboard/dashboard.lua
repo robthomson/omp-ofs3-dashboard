@@ -58,6 +58,25 @@ function dashboard.closeToolbar()
     dashboard.toolbarLastActivityAt = 0
 end
 
+local function ensureDashboardLibraries()
+    dashboard.utils = dashboard.utils or assert(loadfile("SCRIPTS:/" .. ofs3.config.baseDir .. "/widgets/dashboard/lib/utils.lua"))()
+    dashboard.loaders = dashboard.loaders or assert(loadfile("SCRIPTS:/" .. ofs3.config.baseDir .. "/widgets/dashboard/lib/loaders.lua"))()
+    dashboard.toolbar = dashboard.toolbar or assert(loadfile("SCRIPTS:/" .. ofs3.config.baseDir .. "/widgets/dashboard/lib/toolbar.lua"))()
+    dashboard.logviewer = dashboard.logviewer or assert(loadfile("SCRIPTS:/" .. ofs3.config.baseDir .. "/widgets/dashboard/lib/logviewer.lua"))()
+end
+
+local function logWidgetMenu(action)
+    local summary = ofs3.logs and ofs3.logs.getSummary and ofs3.logs.getSummary() or {}
+    local craftName = summary.craftName or "Model"
+    local flightCount = tonumber(summary.flightCount) or 0
+    local totalFlightTime = tonumber(summary.totalFlightTime) or 0
+    local totalFlightText = ofs3.logs and ofs3.logs.formatDuration and ofs3.logs.formatDuration(totalFlightTime) or tostring(totalFlightTime)
+    local telemetryState = ofs3.session and ofs3.session.telemetryState and "ready" or "waiting"
+    local flightMode = ofs3.flightmode and ofs3.flightmode.current or "preflight"
+
+    ofs3.utils.log(string.format("Widget menu %s: craft=%s flightmode=%s telemetry=%s flights=%d total=%s", tostring(action), tostring(craftName), tostring(flightMode), telemetryState, flightCount, totalFlightText))
+end
+
 local function getBoxSize(box, boxWidth, boxHeight, padding, widgetW, widgetH)
     if box.w_pct and box.h_pct then
         local wp = box.w_pct > 1 and (box.w_pct / 100) or box.w_pct
@@ -296,13 +315,40 @@ function dashboard.overlaymessage(x, y, w, h, text)
 end
 
 function dashboard.create()
-    dashboard.utils = dashboard.utils or assert(loadfile("SCRIPTS:/" .. ofs3.config.baseDir .. "/widgets/dashboard/lib/utils.lua"))()
-    dashboard.loaders = dashboard.loaders or assert(loadfile("SCRIPTS:/" .. ofs3.config.baseDir .. "/widgets/dashboard/lib/loaders.lua"))()
-    dashboard.toolbar = dashboard.toolbar or assert(loadfile("SCRIPTS:/" .. ofs3.config.baseDir .. "/widgets/dashboard/lib/toolbar.lua"))()
-    dashboard.logviewer = dashboard.logviewer or assert(loadfile("SCRIPTS:/" .. ofs3.config.baseDir .. "/widgets/dashboard/lib/logviewer.lua"))()
-
+    ensureDashboardLibraries()
     reloadTheme()
     return {}
+end
+
+function dashboard.menu(widget)
+    ensureDashboardLibraries()
+    logWidgetMenu("opened")
+
+    return {
+        {
+            "Open Logs",
+            function()
+                logWidgetMenu("selected Open Logs")
+                dashboard.requestLogViewer = true
+                dashboard.closeToolbar()
+                if lcd.invalidate then
+                    lcd.invalidate(widget)
+                end
+            end
+        },
+        {
+            "Reset Flight",
+            function()
+                logWidgetMenu("selected Reset Flight")
+                if type(dashboard.resetFlightModeAsk) == "function" then
+                    dashboard.resetFlightModeAsk()
+                end
+                if lcd.invalidate then
+                    lcd.invalidate(widget)
+                end
+            end
+        }
+    }
 end
 
 function dashboard.resetFlightModeAsk()

@@ -68,6 +68,7 @@ local function init()
         configure = dashboardConfigure.configure,
         paint = dashboard.paint,
         event = dashboard.event,
+        menu = dashboard.menu,
         wakeup = dashboard.wakeup,
         read = dashboardConfigure.read,
         write = dashboardConfigure.write,
