@@ -36,7 +36,8 @@ local function getToolbarItems(dashboard)
 
     return {
         {
-            name = "Logs",
+            name = "@i18n(widgets.dashboard.toolbar_logs)@",
+            subtitle = "@i18n(widgets.dashboard.toolbar_open_viewer)@",
             onClick = function(state)
                 state.requestLogViewer = true
                 state.toolbarVisible = false
@@ -44,7 +45,8 @@ local function getToolbarItems(dashboard)
             end
         },
         {
-            name = "Reset",
+            name = "@i18n(widgets.dashboard.toolbar_reset)@",
+            subtitle = "@i18n(widgets.dashboard.toolbar_clear_session)@",
             onClick = function(state)
                 if type(state.resetFlightModeAsk) == "function" then
                     state.resetFlightModeAsk()
@@ -94,11 +96,11 @@ local function drawToolbar(dashboard)
         lcd.drawRectangle(itemX, itemY, itemW, itemH, 2)
 
         lcd.color(selected and colors.panel or colors.text)
-        lcd.drawText(itemX + math.floor(itemW / 2), itemY + 14, item.name or "Item", CENTERED)
+        lcd.drawText(itemX + math.floor(itemW / 2), itemY + 14, item.name or "@i18n(widgets.dashboard.toolbar_item)@", CENTERED)
 
         lcd.font(FONT_XXS)
         lcd.color(selected and colors.panel or colors.muted)
-        lcd.drawText(itemX + math.floor(itemW / 2), itemY + itemH - 18, index == 1 and "Open Viewer" or "Clear Session", CENTERED)
+        lcd.drawText(itemX + math.floor(itemW / 2), itemY + itemH - 18, item.subtitle or "", CENTERED)
         lcd.font(FONT_XS)
     end
 

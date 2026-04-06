@@ -33,6 +33,16 @@ def main():
         json_path = os.path.join(git_src, "scripts", "ofs3", "i18n", f"{lang}.json")
 
     if not os.path.isfile(json_path):
+        builder = os.path.join(git_src, "bin", "i18n", "build-single-json.py")
+        if os.path.isfile(builder):
+            print(f"[I18N] Building merged locale bundle for {lang}...")
+            subprocess.run(
+                [sys.executable, builder, "--only", lang],
+                check=True,
+                cwd=os.path.dirname(builder),
+            )
+
+    if not os.path.isfile(json_path):
         print(f"[I18N] Skipping: {lang}.json not found at {json_path}")
         return 0
 

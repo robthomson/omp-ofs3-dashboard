@@ -40,7 +40,7 @@ end
 function configui.configure(widget)
     ensureWidgetDefaults(widget)
 
-    local cellsLine = addLine(nil, "Cell Count")
+    local cellsLine = addLine(nil, "@i18n(widgets.dashboard.configure_cell_count)@")
     local cellsField = form.addNumberField(cellsLine, nil, 1, 14, function()
         return math.floor(tonumber(widget.batteryCellCount) or 3)
     end, function(value)
@@ -50,7 +50,7 @@ function configui.configure(widget)
         cellsField:suffix("S")
     end
 
-    local capacityLine = addLine(nil, "Capacity")
+    local capacityLine = addLine(nil, "@i18n(widgets.dashboard.configure_capacity)@")
     local capacityField = form.addNumberField(capacityLine, nil, 100, 20000, function()
         return math.floor(tonumber(widget.batteryCapacity) or 750)
     end, function(value)

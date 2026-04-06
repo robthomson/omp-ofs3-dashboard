@@ -321,7 +321,7 @@ local function paintObjects()
         if module.header_layout and dashboard.utils.isFullScreen(windowW, windowH) then
             offsetY = module.header_layout.height or 0
         end
-        dashboard.overlaymessage(0, offsetY, windowW, windowH - offsetY, "Waiting for telemetry")
+        dashboard.overlaymessage(0, offsetY, windowW, windowH - offsetY, "@i18n(widgets.dashboard.telemetry_waiting)@")
     end
 end
 
@@ -345,7 +345,7 @@ function dashboard.menu(widget)
 
     return {
         {
-            "Open Logs",
+            "@i18n(widgets.dashboard.open_logs)@",
             function()
                 logWidgetMenu("selected Open Logs")
                 dashboard.requestLogViewer = true
@@ -356,7 +356,7 @@ function dashboard.menu(widget)
             end
         },
         {
-            "Reset Flight",
+            "@i18n(widgets.dashboard.reset_flight)@",
             function()
                 logWidgetMenu("selected Reset Flight")
                 if type(dashboard.resetFlightModeAsk) == "function" then
@@ -373,7 +373,7 @@ end
 function dashboard.resetFlightModeAsk()
     local buttons = {
         {
-            label = "OK",
+            label = "@i18n(widgets.dashboard.ok)@",
             action = function()
                 if ofs3.runtime and ofs3.runtime.resetFlight then
                     ofs3.runtime.resetFlight()
@@ -390,7 +390,7 @@ function dashboard.resetFlightModeAsk()
             end
         },
         {
-            label = "Cancel",
+            label = "@i18n(widgets.dashboard.cancel)@",
             action = function()
                 return true
             end
@@ -398,8 +398,8 @@ function dashboard.resetFlightModeAsk()
     }
 
     form.openDialog({
-        title = "Reset Flight",
-        message = "Reset dashboard flight state and session timer?",
+        title = "@i18n(widgets.dashboard.reset_flight)@",
+        message = "@i18n(widgets.dashboard.reset_flight_message)@",
         buttons = buttons,
         options = TEXT_LEFT
     })
@@ -407,7 +407,7 @@ end
 
 function dashboard.paint()
     if unsupportedResolution then
-        dashboard.utils.screenError("Unsupported widget size", true, 0.5)
+        dashboard.utils.screenError("@i18n(widgets.dashboard.unsupported_widget_size)@", true, 0.5)
         return
     end
 

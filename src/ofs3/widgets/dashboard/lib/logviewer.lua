@@ -8,11 +8,11 @@ local ofs3 = require("ofs3")
 local logviewer = {}
 
 local GRAPH_COLUMNS = {
-    {name = "voltage", keyname = "Voltage", keyunit = "V", colorDark = lcd.RGB(220, 92, 92), colorLight = lcd.RGB(190, 0, 0), graph = true},
-    {name = "current", keyname = "Current", keyunit = "A", colorDark = lcd.RGB(255, 168, 58), colorLight = lcd.RGB(210, 112, 0), graph = true},
-    {name = "rpm", keyname = "Headspeed", keyunit = "rpm", colorDark = lcd.RGB(102, 214, 129), colorLight = lcd.RGB(0, 136, 0), graph = true},
-    {name = "temp_esc", keyname = "ESC Temp", keyunit = "C", colorDark = lcd.RGB(90, 180, 255), colorLight = lcd.RGB(0, 80, 200), graph = true},
-    {name = "throttle_percent", keyname = "Throttle", keyunit = "%", colorDark = lcd.RGB(248, 215, 90), colorLight = lcd.RGB(180, 160, 0), graph = false}
+    {name = "voltage", keyname = "@i18n(widgets.dashboard.logs_voltage)@", keyunit = "V", colorDark = lcd.RGB(220, 92, 92), colorLight = lcd.RGB(190, 0, 0), graph = true},
+    {name = "current", keyname = "@i18n(widgets.dashboard.logs_current)@", keyunit = "A", colorDark = lcd.RGB(255, 168, 58), colorLight = lcd.RGB(210, 112, 0), graph = true},
+    {name = "rpm", keyname = "@i18n(widgets.dashboard.logs_headspeed)@", keyunit = "rpm", colorDark = lcd.RGB(102, 214, 129), colorLight = lcd.RGB(0, 136, 0), graph = true},
+    {name = "temp_esc", keyname = "@i18n(widgets.dashboard.logs_esc_temp)@", keyunit = "C", colorDark = lcd.RGB(90, 180, 255), colorLight = lcd.RGB(0, 80, 200), graph = true},
+    {name = "throttle_percent", keyname = "@i18n(widgets.dashboard.logs_throttle)@", keyunit = "%", colorDark = lcd.RGB(248, 215, 90), colorLight = lcd.RGB(180, 160, 0), graph = false}
 }
 
 local ZOOM_WINDOWS = {600, 300, 120, 60, 30}
@@ -207,7 +207,7 @@ local function extractShortTimestamp(filename)
     if date and time then
         return date:gsub("%-", "/") .. " " .. time:gsub("%-", ":")
     end
-    return filename or "Log"
+    return filename or "@i18n(widgets.dashboard.logs_default_name)@"
 end
 
 local function extractTimeLabel(filename)
@@ -215,13 +215,13 @@ local function extractTimeLabel(filename)
     if hour and minute then
         return hour .. ":" .. minute
     end
-    return "Log"
+    return "@i18n(widgets.dashboard.logs_default_name)@"
 end
 
 local function extractDateLabel(filename)
     local date = tostring(filename or ""):match("(%d%d%d%d%-%d%d%-%d%d)_")
     if not date then
-        return "Unknown Date"
+        return "@i18n(widgets.dashboard.logs_unknown_date)@"
     end
 
     local year, month, day = date:match("^(%d+)%-(%d+)%-(%d+)$")
@@ -396,7 +396,7 @@ local function processLoadJob()
         local path = ofs3.logs.getDirectory() .. "/" .. tostring(job.filename)
         job.handle = io.open(path, "r")
         if not job.handle then
-            state.loadError = "Unable to open log"
+            state.loadError = "@i18n(widgets.dashboard.logs_open_failed)@"
             state.loadJob = nil
             return true
         end
@@ -416,7 +416,7 @@ local function processLoadJob()
 
                 local header = splitCsvLine(job.headerLine)
                 if #header == 0 then
-                    state.loadError = "Invalid log header"
+                    state.loadError = "@i18n(widgets.dashboard.logs_invalid_header)@"
                     state.loadJob = nil
                     return true
                 end
@@ -773,23 +773,23 @@ local function paintList(theme, width, height)
     lcd.drawFilledRectangle(metrics.margin, topBarY, 4, metrics.topBarHeight)
 
     state.hitboxes.list.back = {x = metrics.margin + 8, y = topBarY + 4, w = 74, h = metrics.topBarHeight - 8}
-    drawButton(state.hitboxes.list.back.x, state.hitboxes.list.back.y, state.hitboxes.list.back.w, state.hitboxes.list.back.h, "Back", (state.selectedListIndex or 1) == 0, theme, FONT_XXS, true, false)
+    drawButton(state.hitboxes.list.back.x, state.hitboxes.list.back.y, state.hitboxes.list.back.w, state.hitboxes.list.back.h, "@i18n(widgets.dashboard.logs_back)@", (state.selectedListIndex or 1) == 0, theme, FONT_XXS, true, false)
 
     lcd.font(FONT_XS)
     lcd.color(theme.text)
-    lcd.drawText(titleX, topBarY + 5, "Flight Logs")
+    lcd.drawText(titleX, topBarY + 5, "@i18n(widgets.dashboard.logs_title)@")
 
     lcd.font(FONT_XXS)
     lcd.color(theme.muted)
-    lcd.drawText(titleX, topBarY + 18, string.format("%d logs", #state.entries))
+    lcd.drawText(titleX, topBarY + 18, string.format("@i18n(widgets.dashboard.logs_count)@", #state.entries))
 
     if #state.entries == 0 then
         lcd.font(FONT_STD)
         lcd.color(theme.text)
-        lcd.drawText(metrics.listX + 4, metrics.listY + 10, "No saved logs found")
+        lcd.drawText(metrics.listX + 4, metrics.listY + 10, "@i18n(widgets.dashboard.logs_empty_title)@")
         lcd.font(FONT_XXS)
         lcd.color(theme.muted)
-        lcd.drawText(metrics.listX + 4, metrics.listY + 34, "Logs will appear here once flights are saved")
+        lcd.drawText(metrics.listX + 4, metrics.listY + 34, "@i18n(widgets.dashboard.logs_empty_message)@")
         return
     end
 
@@ -835,7 +835,7 @@ local function paintView(theme, width, height)
     state.hitboxes.view.right = {x = width - margin - (buttonW + buttonGap), y = buttonY, w = buttonW, h = buttonH}
 
     local selectedControl = currentViewControlName()
-    drawButton(state.hitboxes.view.back.x, state.hitboxes.view.back.y, state.hitboxes.view.back.w, state.hitboxes.view.back.h, "Back", selectedControl == "back", theme, FONT_XXS, true, false)
+    drawButton(state.hitboxes.view.back.x, state.hitboxes.view.back.y, state.hitboxes.view.back.w, state.hitboxes.view.back.h, "@i18n(widgets.dashboard.logs_back)@", selectedControl == "back", theme, FONT_XXS, true, false)
     drawButton(state.hitboxes.view.minus.x, state.hitboxes.view.minus.y, state.hitboxes.view.minus.w, state.hitboxes.view.minus.h, "-", selectedControl == "minus", theme, FONT_XS, true, true)
     drawButton(state.hitboxes.view.plus.x, state.hitboxes.view.plus.y, state.hitboxes.view.plus.w, state.hitboxes.view.plus.h, "+", selectedControl == "plus", theme, FONT_XS, true, true)
     drawButton(state.hitboxes.view.left.x, state.hitboxes.view.left.y, state.hitboxes.view.left.w, state.hitboxes.view.left.h, "<", selectedControl == "left", theme, FONT_XS, true, true)
@@ -846,7 +846,7 @@ local function paintView(theme, width, height)
     lcd.drawText(margin + buttonW + 20, margin + 6, extractShortTimestamp(state.selectedFile))
     lcd.font(FONT_XXS)
     lcd.color(theme.muted)
-    lcd.drawText(margin + buttonW + 20, margin + 22, string.format("Zoom %d/%d  Pos %d", state.zoomLevel, state.zoomCount, state.sliderPosition))
+    lcd.drawText(margin + buttonW + 20, margin + 22, string.format("@i18n(widgets.dashboard.logs_zoom_status)@", state.zoomLevel, state.zoomCount, state.sliderPosition))
 
     local graphColumns, startIndex, windowSize = getGraphWindow()
     local graphTop = margin + topBarHeight + 10
@@ -883,10 +883,10 @@ local function paintView(theme, width, height)
         lcd.drawText(statsX, statsY + 2, column.keyname)
         lcd.font(FONT_XXS)
         lcd.color(theme.muted)
-        lcd.drawText(statsX, statsY + 18, string.format("Min %s", formatMetricValue(column.minimum, column.keyunit)))
-        lcd.drawText(statsX + math.floor(statsW * 0.42), statsY + 18, string.format("Max %s", formatMetricValue(column.maximum, column.keyunit)))
+        lcd.drawText(statsX, statsY + 18, string.format("@i18n(widgets.dashboard.logs_metric_min)@", formatMetricValue(column.minimum, column.keyunit)))
+        lcd.drawText(statsX + math.floor(statsW * 0.42), statsY + 18, string.format("@i18n(widgets.dashboard.logs_metric_max)@", formatMetricValue(column.maximum, column.keyunit)))
         lcd.color(theme.text)
-        lcd.drawText(statsX, statsY + 32, string.format("Now %s", formatMetricValue(currentValue, column.keyunit)))
+        lcd.drawText(statsX, statsY + 32, string.format("@i18n(widgets.dashboard.logs_metric_now)@", formatMetricValue(currentValue, column.keyunit)))
     end
 end
 
@@ -1122,7 +1122,7 @@ function logviewer.paint()
         lcd.drawFilledRectangle(20, math.floor(height * 0.35), 4, 70)
         lcd.font(FONT_STD)
         lcd.color(theme.text)
-        lcd.drawText(math.floor(width / 2), math.floor(height * 0.35) + 14, "Loading Log", CENTERED)
+        lcd.drawText(math.floor(width / 2), math.floor(height * 0.35) + 14, "@i18n(widgets.dashboard.logs_loading)@", CENTERED)
         lcd.font(FONT_XXS)
         lcd.color(theme.muted)
         lcd.drawText(math.floor(width / 2), math.floor(height * 0.35) + 38, tostring(state.loadJob.filename or ""), CENTERED)
@@ -1138,7 +1138,7 @@ function logviewer.paint()
         lcd.drawFilledRectangle(20, math.floor(height * 0.35), 4, 70)
         lcd.font(FONT_STD)
         lcd.color(theme.text)
-        lcd.drawText(math.floor(width / 2), math.floor(height * 0.35) + 14, "Log Load Failed", CENTERED)
+        lcd.drawText(math.floor(width / 2), math.floor(height * 0.35) + 14, "@i18n(widgets.dashboard.logs_load_failed)@", CENTERED)
         lcd.font(FONT_XXS)
         lcd.color(theme.muted)
         lcd.drawText(math.floor(width / 2), math.floor(height * 0.35) + 38, tostring(state.loadError), CENTERED)

@@ -120,11 +120,11 @@ local function buildBoxes(W)
     return {
 
         {col = 1, row = 1, colspan = 8, rowspan = 3, type = "image", subtype = "model", bgcolor = colorMode.bgcolor},
-        {col = 1, row = 4, colspan = 8, rowspan = 3, type = "text", subtype = "telemetry", source = "rpm", nosource = "-", unit = "", transform = "floor", title = "HEADSPEED", titlepos = "bottom", titlecolor = colorMode.titlecolor, textcolor = colorMode.titlecolor, bgcolor = colorMode.bgcolor},
-        {col = 1, row = 7, colspan = 4, rowspan = 2, type = "text", subtype = "telemetry", source = "profile", title = "PROFILE", titlepos = "bottom", transform = "floor", titlecolor = colorMode.titlecolor, textcolor = colorMode.titlecolor, bgcolor = colorMode.bgcolor},
-        {col = 5, row = 7, colspan = 4, rowspan = 2, type = "time", subtype = "count", title = "FLIGHTS", titlepos = "bottom", titlecolor = colorMode.titlecolor, textcolor = colorMode.titlecolor, bgcolor = colorMode.bgcolor},
-        {col = 9, row = 7, colspan = 6, rowspan = 2, type = "time", subtype = "flight", title = "TIME", titlepos = "bottom", titlecolor = colorMode.titlecolor, textcolor = colorMode.titlecolor, bgcolor = colorMode.bgcolor},
-        {col = 15, row = 7, colspan = 6, rowspan = 2, type = "text", subtype = "telemetry", source = "rssi", nosource = "-", unit = "dB", title = "LQ", titlepos = "bottom", transform = "floor", titlecolor = colorMode.titlecolor, textcolor = colorMode.titlecolor, bgcolor = colorMode.bgcolor}, {
+        {col = 1, row = 4, colspan = 8, rowspan = 3, type = "text", subtype = "telemetry", source = "rpm", nosource = "-", unit = "", transform = "floor", title = "@i18n(widgets.dashboard.theme_headspeed)@", titlepos = "bottom", titlecolor = colorMode.titlecolor, textcolor = colorMode.titlecolor, bgcolor = colorMode.bgcolor},
+        {col = 1, row = 7, colspan = 4, rowspan = 2, type = "text", subtype = "telemetry", source = "profile", title = "@i18n(widgets.dashboard.theme_profile)@", titlepos = "bottom", transform = "floor", titlecolor = colorMode.titlecolor, textcolor = colorMode.titlecolor, bgcolor = colorMode.bgcolor},
+        {col = 5, row = 7, colspan = 4, rowspan = 2, type = "time", subtype = "count", title = "@i18n(widgets.dashboard.theme_flights)@", titlepos = "bottom", titlecolor = colorMode.titlecolor, textcolor = colorMode.titlecolor, bgcolor = colorMode.bgcolor},
+        {col = 9, row = 7, colspan = 6, rowspan = 2, type = "time", subtype = "flight", title = "@i18n(widgets.dashboard.theme_time)@", titlepos = "bottom", titlecolor = colorMode.titlecolor, textcolor = colorMode.titlecolor, bgcolor = colorMode.bgcolor},
+        {col = 15, row = 7, colspan = 6, rowspan = 2, type = "text", subtype = "telemetry", source = "rssi", nosource = "-", unit = "dB", title = "@i18n(widgets.dashboard.theme_lq)@", titlepos = "bottom", transform = "floor", titlecolor = colorMode.titlecolor, textcolor = colorMode.titlecolor, bgcolor = colorMode.bgcolor}, {
             type = "gauge",
             subtype = "arc",
             col = 9,
@@ -139,7 +139,7 @@ local function buildBoxes(W)
             max = 100,
             font = opts.font,
             arcbgcolor = colorMode.arcbgcolor,
-            title = "FUEL",
+            title = "@i18n(widgets.dashboard.theme_fuel)@",
             titlepos = "bottom",
             titlecolor = colorMode.titlecolor,
             textcolor = colorMode.titlecolor,
@@ -157,7 +157,7 @@ local function buildBoxes(W)
             subtype = "arc",
             source = "voltage",
             fillbgcolor = colorMode.fillbgcolor,
-            title = "VOLTAGE",
+            title = "@i18n(widgets.dashboard.theme_voltage)@",
             font = opts.font,
             thickness = opts.thickness,
             gaugepadding = opts.gaugepadding,
