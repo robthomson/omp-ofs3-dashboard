@@ -259,20 +259,20 @@ function telemetry.detectProtocol()
     local externalModule = model.getModule and model.getModule(1) or nil
 
     if internalModule and internalModule.enable and internalModule:enable() then
-        local sportSource = resolveSource({appId = 0xF101})
-        if sourceIsUsable(sportSource) then
+        local sportSource = findExistingSource({{appId = 0xF101}})
+        if sportSource ~= nil then
             return "sport", sportSource, internalModule
         end
     end
 
     if externalModule and externalModule.enable and externalModule:enable() then
-        local crsfSource = resolveSource({crsfId = 0x14, subIdStart = 0, subIdEnd = 1})
-        if sourceIsUsable(crsfSource) then
+        local crsfSource = findExistingSource({{crsfId = 0x14, subIdStart = 0, subIdEnd = 1}})
+        if crsfSource ~= nil then
             return "crsf", crsfSource, externalModule
         end
 
-        local sportSource = resolveSource({appId = 0xF101})
-        if sourceIsUsable(sportSource) then
+        local sportSource = findExistingSource({{appId = 0xF101}})
+        if sportSource ~= nil then
             return "sport", sportSource, externalModule
         end
     end
