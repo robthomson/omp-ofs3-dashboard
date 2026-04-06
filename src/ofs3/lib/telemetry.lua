@@ -287,11 +287,7 @@ function telemetry.getSensorSource(sensorKey)
     end
 
     local cached = sensors[sensorKey]
-    if protocol == "sim" then
-        if cached ~= nil then
-            return cached
-        end
-    elseif sourceIsUsable(cached) then
+    if cached ~= nil then
         return cached
     end
 
@@ -330,7 +326,7 @@ function telemetry.getSensorSource(sensorKey)
     end
 
     for _, group in ipairs(groups) do
-        local source = findUsableSource(def.sensors[group])
+        local source = findExistingSource(def.sensors[group])
         if source then
             sensors[sensorKey] = source
             return source
