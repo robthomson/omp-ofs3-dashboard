@@ -1,267 +1,267 @@
 {
   "configure_capacity": {
     "english": "Capacity",
-    "translation": "Capacity",
-    "needs_translation": true
+    "translation": "Capacita",
+    "needs_translation": false
   },
   "configure_cell_count": {
     "english": "Cell Count",
-    "translation": "Cell Count",
-    "needs_translation": true
+    "translation": "Numero celle",
+    "needs_translation": false
   },
   "loading": {
     "english": "LOADING",
-    "translation": "LOADING",
-    "needs_translation": true
+    "translation": "CARICAMENTO",
+    "needs_translation": false
   },
   "armed": {
     "english": "ARMED",
-    "translation": "ARMED",
-    "needs_translation": true
+    "translation": "ARMATO",
+    "needs_translation": false
   },
   "disarmed": {
     "english": "DISARMED",
-    "translation": "DISARMED",
-    "needs_translation": true
+    "translation": "DISARMATO",
+    "needs_translation": false
   },
   "telemetry_waiting": {
     "english": "Waiting for telemetry",
-    "translation": "Waiting for telemetry",
-    "needs_translation": true
+    "translation": "In attesa di telemetria",
+    "needs_translation": false
   },
   "open_logs": {
     "english": "Open Logs",
-    "translation": "Open Logs",
-    "needs_translation": true
+    "translation": "Apri log",
+    "needs_translation": false
   },
   "reset_flight": {
     "english": "Reset Flight",
-    "translation": "Reset Flight",
-    "needs_translation": true
+    "translation": "Reset volo",
+    "needs_translation": false
   },
   "reset_flight_message": {
     "english": "Reset dashboard flight state and session timer?",
-    "translation": "Reset dashboard flight state and session timer?",
-    "needs_translation": true
+    "translation": "Resettare stato volo e timer sessione?",
+    "needs_translation": false
   },
   "ok": {
     "english": "OK",
     "translation": "OK",
-    "needs_translation": true
+    "needs_translation": false
   },
   "cancel": {
     "english": "Cancel",
-    "translation": "Cancel",
-    "needs_translation": true
+    "translation": "Annulla",
+    "needs_translation": false
   },
   "unsupported_widget_size": {
     "english": "Unsupported widget size",
-    "translation": "Unsupported widget size",
-    "needs_translation": true
+    "translation": "Dimensione widget non supportata",
+    "needs_translation": false
   },
   "toolbar_logs": {
     "english": "Logs",
-    "translation": "Logs",
-    "needs_translation": true
+    "translation": "Log",
+    "needs_translation": false
   },
   "toolbar_reset": {
     "english": "Reset",
     "translation": "Reset",
-    "needs_translation": true
+    "needs_translation": false
   },
   "toolbar_open_viewer": {
     "english": "Open Viewer",
-    "translation": "Open Viewer",
-    "needs_translation": true
+    "translation": "Apri viewer",
+    "needs_translation": false
   },
   "toolbar_clear_session": {
     "english": "Clear Session",
-    "translation": "Clear Session",
-    "needs_translation": true
+    "translation": "Cancella sessione",
+    "needs_translation": false
   },
   "toolbar_item": {
     "english": "Item",
-    "translation": "Item",
-    "needs_translation": true
+    "translation": "Voce",
+    "needs_translation": false
   },
   "logs_back": {
     "english": "Back",
-    "translation": "Back",
-    "needs_translation": true
+    "translation": "Indietro",
+    "needs_translation": false
   },
   "logs_title": {
     "english": "Flight Logs",
-    "translation": "Flight Logs",
-    "needs_translation": true
+    "translation": "Log di volo",
+    "needs_translation": false
   },
   "logs_count": {
     "english": "%d logs",
-    "translation": "%d logs",
-    "needs_translation": true
+    "translation": "%d log",
+    "needs_translation": false
   },
   "logs_empty_title": {
     "english": "No saved logs found",
-    "translation": "No saved logs found",
-    "needs_translation": true
+    "translation": "Nessun log salvato",
+    "needs_translation": false
   },
   "logs_empty_message": {
     "english": "Logs will appear here once flights are saved",
-    "translation": "Logs will appear here once flights are saved",
-    "needs_translation": true
+    "translation": "I log appariranno qui dopo il salvataggio",
+    "needs_translation": false
   },
   "logs_zoom_status": {
     "english": "Zoom %d/%d  Pos %d",
     "translation": "Zoom %d/%d  Pos %d",
-    "needs_translation": true
+    "needs_translation": false
   },
   "logs_metric_min": {
     "english": "Min %s",
     "translation": "Min %s",
-    "needs_translation": true
+    "needs_translation": false
   },
   "logs_metric_max": {
     "english": "Max %s",
     "translation": "Max %s",
-    "needs_translation": true
+    "needs_translation": false
   },
   "logs_metric_now": {
     "english": "Now %s",
-    "translation": "Now %s",
-    "needs_translation": true
+    "translation": "Ora %s",
+    "needs_translation": false
   },
   "logs_loading": {
     "english": "Loading Log",
-    "translation": "Loading Log",
-    "needs_translation": true
+    "translation": "Caricamento log",
+    "needs_translation": false
   },
   "logs_load_failed": {
     "english": "Log Load Failed",
-    "translation": "Log Load Failed",
-    "needs_translation": true
+    "translation": "Caricamento log fallito",
+    "needs_translation": false
   },
   "logs_open_failed": {
     "english": "Unable to open log",
-    "translation": "Unable to open log",
-    "needs_translation": true
+    "translation": "Impossibile aprire il log",
+    "needs_translation": false
   },
   "logs_invalid_header": {
     "english": "Invalid log header",
-    "translation": "Invalid log header",
-    "needs_translation": true
+    "translation": "Intestazione log non valida",
+    "needs_translation": false
   },
   "logs_default_name": {
     "english": "Log",
     "translation": "Log",
-    "needs_translation": true
+    "needs_translation": false
   },
   "logs_unknown_date": {
     "english": "Unknown Date",
-    "translation": "Unknown Date",
-    "needs_translation": true
+    "translation": "Data sconosciuta",
+    "needs_translation": false
   },
   "logs_voltage": {
     "english": "Voltage",
-    "translation": "Voltage",
-    "needs_translation": true
+    "translation": "Tensione",
+    "needs_translation": false
   },
   "logs_current": {
     "english": "Current",
-    "translation": "Current",
-    "needs_translation": true
+    "translation": "Corrente",
+    "needs_translation": false
   },
   "logs_headspeed": {
     "english": "Headspeed",
-    "translation": "Headspeed",
-    "needs_translation": true
+    "translation": "RPM rotore",
+    "needs_translation": false
   },
   "logs_esc_temp": {
     "english": "ESC Temp",
-    "translation": "ESC Temp",
-    "needs_translation": true
+    "translation": "Temp ESC",
+    "needs_translation": false
   },
   "logs_throttle": {
     "english": "Throttle",
-    "translation": "Throttle",
-    "needs_translation": true
+    "translation": "Gas",
+    "needs_translation": false
   },
   "theme_headspeed": {
     "english": "HEADSPEED",
-    "translation": "HEADSPEED",
-    "needs_translation": true
+    "translation": "RPM ROTORE",
+    "needs_translation": false
   },
   "theme_profile": {
     "english": "PROFILE",
-    "translation": "PROFILE",
-    "needs_translation": true
+    "translation": "PROFILO",
+    "needs_translation": false
   },
   "theme_flights": {
     "english": "FLIGHTS",
-    "translation": "FLIGHTS",
-    "needs_translation": true
+    "translation": "VOLI",
+    "needs_translation": false
   },
   "theme_time": {
     "english": "TIME",
-    "translation": "TIME",
-    "needs_translation": true
+    "translation": "TEMPO",
+    "needs_translation": false
   },
   "theme_lq": {
     "english": "LQ",
     "translation": "LQ",
-    "needs_translation": true
+    "needs_translation": false
   },
   "theme_fuel": {
     "english": "FUEL",
-    "translation": "FUEL",
-    "needs_translation": true
+    "translation": "BATTERIA",
+    "needs_translation": false
   },
   "theme_voltage": {
     "english": "VOLTAGE",
-    "translation": "VOLTAGE",
-    "needs_translation": true
+    "translation": "TENSIONE",
+    "needs_translation": false
   },
   "theme_flight_duration": {
     "english": "Flight Duration",
-    "translation": "Flight Duration",
-    "needs_translation": true
+    "translation": "Durata volo",
+    "needs_translation": false
   },
   "theme_total_model_flight_duration": {
     "english": "Total Model Flight Duration",
-    "translation": "Total Model Flight Duration",
-    "needs_translation": true
+    "translation": "Durata totale",
+    "needs_translation": false
   },
   "theme_rpm_max": {
     "english": "RPM Max",
     "translation": "RPM Max",
-    "needs_translation": true
+    "needs_translation": false
   },
   "theme_current_max": {
     "english": "Current Max",
-    "translation": "Current Max",
-    "needs_translation": true
+    "translation": "Corrente Max",
+    "needs_translation": false
   },
   "theme_esc_temp_max": {
     "english": "ESC Temp Max",
-    "translation": "ESC Temp Max",
-    "needs_translation": true
+    "translation": "Temp ESC Max",
+    "needs_translation": false
   },
   "theme_max_watts": {
     "english": "Max Watts",
-    "translation": "Max Watts",
-    "needs_translation": true
+    "translation": "Watt Max",
+    "needs_translation": false
   },
   "theme_consumed_mah": {
     "english": "Consumed mAh",
-    "translation": "Consumed mAh",
-    "needs_translation": true
+    "translation": "mAh usati",
+    "needs_translation": false
   },
   "theme_fuel_remaining": {
     "english": "Fuel Remaining",
-    "translation": "Fuel Remaining",
-    "needs_translation": true
+    "translation": "Batteria residua",
+    "needs_translation": false
   },
   "theme_link_min": {
     "english": "Link Min",
     "translation": "Link Min",
-    "needs_translation": true
+    "needs_translation": false
   }
 }
