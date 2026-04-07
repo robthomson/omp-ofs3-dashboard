@@ -5,18 +5,13 @@ on:
     types: [opened, synchronize, reopened]
 
 jobs:
-  # Per-language PR builds (mirrors push.yml behavior)
   create-zip:
     name: Build PR ZIP (${{ matrix.lang }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        # 👇 keep this in sync with push.yml (add/remove locales as needed)
-        lang: [en, de , es, fr, it, nl]
-
-    env:
-      STAGE: build/${{ matrix.lang }}/scripts
+        lang: [en, de, es, fr, it, nl]
 
     steps:
       - name: Checkout code
@@ -30,61 +25,20 @@ jobs:
       - name: Set build variables (PR version)
         run: |
           PR_NUMBER='${{ github.event.pull_request.number }}'
-          echo "GIT_VER=PR-${PR_NUMBER}" >> $GITHUB_ENV
+          echo "GIT_VER=PR-${PR_NUMBER}" >> "$GITHUB_ENV"
 
-      # Build merged i18n JSON only for this locale (into scripts/ofs3/i18n/<lang>.json)
-      - name: Build merged i18n JSON (${{ matrix.lang }})
+      - name: Build package for locale ${{ matrix.lang }}
         run: |
-          python bin/i18n/build-single-json.py --only '${{ matrix.lang }}'
-          test -f "scripts/ofs3/i18n/${{ matrix.lang }}.json"
-
-      # Stage scripts/ into build/<lang>/scripts
-      - name: Stage scripts tree
-        run: |
-          rm -rf "${{ env.STAGE }}"
-          mkdir -p "${{ env.STAGE }}"
-          cp -a scripts/. "${{ env.STAGE }}/"
-
-      # Resolve @i18n(...)@ tags in the staged tree using the staged locale file
-      - name: Resolve i18n tags (locale=${{ matrix.lang }})
-        run: |
-          python .vscode/scripts/resolve_i18n_tags.py \
-            --json "${{ env.STAGE }}/ofs3/i18n/${{ matrix.lang }}.json" \
-            --root "${{ env.STAGE }}"
-
-      # Copy sound pack for this locale into the staged tree (fallback to en)
-      - name: Copy sound pack (locale=${{ matrix.lang }})
-        run: |
-          SRC="bin/sound-generator/soundpack/${{ matrix.lang }}"
-          if [ ! -d "$SRC" ]; then
-            echo "[AUDIO] $SRC not found; falling back to bin/sound-generator/soundpack/en"
-            SRC="bin/sound-generator/soundpack/en"
-          fi
-          if [ -d "$SRC" ]; then
-            DEST="${{ env.STAGE }}/ofs3/audio/${{ matrix.lang }}"
-            rm -rf "$DEST"
-            mkdir -p "$DEST"
-            cp -a "$SRC/." "$DEST/"
-            echo "[AUDIO] Copied $SRC -> $DEST"
-          else
-            echo "[AUDIO] No sound pack found (lang='${{ matrix.lang }}' or 'en'). Skipping."
-          fi
-
-      # Write PR version suffix into the *staged* main.lua
-      - name: Update version and config in staged main.lua
-        run: |
-          sed -E -i "s/(version[[:space:]]*=[[:space:]]*\{[^}]*suffix[[:space:]]*=[[:space:]]*\")[^\"]*(\")/\1${{ env.GIT_VER }}\2/" "${{ env.STAGE }}/ofs3/main.lua"
-          grep 'config\.' "${{ env.STAGE }}/ofs3/main.lua" || true
-
-      # Zip the staged scripts (includes i18n + audio for this locale)
-      - name: Create omp-ofs3-dashboard-${{ env.GIT_VER }}-${{ matrix.lang }}.zip
-        run: |
-          ( cd "build/${{ matrix.lang }}" && zip -q -r -9 "omp-ofs3-dashboard-${{ env.GIT_VER }}-${{ matrix.lang }}.zip" scripts )
-          mv "build/${{ matrix.lang }}/omp-ofs3-dashboard-${{ env.GIT_VER }}-${{ matrix.lang }}.zip" .
+          ART="omp-ofs3-dashboard-${{ env.GIT_VER }}-${{ matrix.lang }}.zip"
+          python .github/scripts/build_locale_package.py \
+            --lang "${{ matrix.lang }}" \
+            --version "${{ env.GIT_VER }}" \
+            --artifact "$ART"
+          echo "ARTIFACT=$ART" >> "$GITHUB_ENV"
 
       - name: Upload per-locale ZIP
         uses: actions/upload-artifact@v4
         with:
           name: omp-ofs3-dashboard-${{ env.GIT_VER }}-${{ matrix.lang }}
-          path: omp-ofs3-dashboard-${{ env.GIT_VER }}-${{ matrix.lang }}.zip
+          path: ${{ env.ARTIFACT }}
           if-no-files-found: error

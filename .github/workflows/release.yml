@@ -3,7 +3,7 @@ name: Release
 on:
   push:
     tags:
-      - 'release/*'
+      - "release/*"
 
 permissions:
   contents: write
@@ -15,7 +15,6 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # keep in sync with pr.yml / push.yml
         lang: [en, de, es, fr, it, nl]
 
     steps:
@@ -25,7 +24,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
       - name: Set build variables (from tag)
         id: buildvars
@@ -34,58 +33,23 @@ jobs:
           GIT_TAG="${GITHUB_REF_NAME}"
           GIT_VER="${GIT_TAG#release/}"
           if [[ $GIT_VER =~ ^[0-9]+\.[0-9]+\.[0-9]+-[A-Za-z0-9]+$ ]]; then
-            GH_TYPE='Release Candidate'
+            GH_TYPE="Release Candidate"
           else
-            GH_TYPE='Release'
+            GH_TYPE="Release"
           fi
-          echo "GIT_VER=$GIT_VER" >> $GITHUB_ENV
-          echo "GIT_TAG=$GIT_TAG" >> $GITHUB_ENV
-          echo "GH_TYPE=$GH_TYPE" >> $GITHUB_ENV
+          echo "GIT_VER=$GIT_VER" >> "$GITHUB_ENV"
+          echo "GIT_TAG=$GIT_TAG" >> "$GITHUB_ENV"
+          echo "GH_TYPE=$GH_TYPE" >> "$GITHUB_ENV"
 
-      - name: Build merged i18n JSON (${{ matrix.lang }})
-        run: python bin/i18n/build-single-json.py --only '${{ matrix.lang }}'
-
-      - name: Stage files for this locale
-        shell: bash
-        run: |
-          STAGE="build/${{ matrix.lang }}/scripts"
-          mkdir -p "$STAGE"
-          rsync -a scripts/ "$STAGE"/
-          echo "STAGE=$STAGE" >> $GITHUB_ENV
-
-      - name: Resolve i18n tags (locale=${{ matrix.lang }})
-        run: |
-          python .vscode/scripts/resolve_i18n_tags.py \
-            --json "${{ env.STAGE }}/ofs3/i18n/${{ matrix.lang }}.json" \
-            --root "${{ env.STAGE }}"
-
-      - name: Copy sound pack (locale=${{ matrix.lang }})
-        shell: bash
-        run: |
-          SRC="bin/sound-generator/soundpack/${{ matrix.lang }}"
-          if [ ! -d "$SRC" ]; then
-            echo "[AUDIO] $SRC not found; falling back to bin/sound-generator/soundpack/en"
-            SRC="bin/sound-generator/soundpack/en"
-          fi
-          DEST="${{ env.STAGE }}/ofs3/audio/${{ matrix.lang }}"
-          rm -rf "$DEST"
-          mkdir -p "$DEST"
-          cp -a "$SRC/." "$DEST/"
-          echo "[AUDIO] Copied $SRC -> $DEST"
-
-      - name: Update version and config in staged main.lua
-        shell: bash
-        run: |
-          sed -E -i 's/(version[[:space:]]*=[[:space:]]*\{[^}]*suffix[[:space:]]*=[[:space:]]*")[^"]*(")/\1'${{ env.GIT_VER }}'\2/' "${{ env.STAGE }}/ofs3/main.lua"
-          grep 'config\.' "${{ env.STAGE }}/ofs3/main.lua" || true
-
-      - name: Create release ZIP (locale=${{ matrix.lang }})
+      - name: Build package for locale ${{ matrix.lang }}
         shell: bash
         run: |
           ART="omp-ofs3-dashboard-${{ env.GIT_VER }}-${{ matrix.lang }}.zip"
-          (cd "build/${{ matrix.lang }}" && zip -q -r -9 "../$ART" scripts)
-          mv "build/${{ matrix.lang }}/../$ART" .
-          echo "ARTIFACT=$ART" >> $GITHUB_ENV
+          python .github/scripts/build_locale_package.py \
+            --lang "${{ matrix.lang }}" \
+            --version "${{ env.GIT_VER }}" \
+            --artifact "$ART"
+          echo "ARTIFACT=$ART" >> "$GITHUB_ENV"
 
       - name: Upload per-locale artifact
         uses: actions/upload-artifact@v4
@@ -109,13 +73,13 @@ jobs:
           GIT_TAG="${GITHUB_REF_NAME}"
           GIT_VER="${GIT_TAG#release/}"
           if [[ $GIT_VER =~ ^[0-9]+\.[0-9]+\.[0-9]+-[A-Za-z0-9]+$ ]]; then
-            GH_TYPE='Release Candidate'
+            GH_TYPE="Release Candidate"
           else
-            GH_TYPE='Release'
+            GH_TYPE="Release"
           fi
-          echo "GIT_VER=$GIT_VER" >> $GITHUB_ENV
-          echo "GIT_TAG=$GIT_TAG" >> $GITHUB_ENV
-          echo "GH_TYPE=$GH_TYPE" >> $GITHUB_ENV
+          echo "GIT_VER=$GIT_VER" >> "$GITHUB_ENV"
+          echo "GIT_TAG=$GIT_TAG" >> "$GITHUB_ENV"
+          echo "GH_TYPE=$GH_TYPE" >> "$GITHUB_ENV"
 
       - name: Download all artifacts
         uses: actions/download-artifact@v4
