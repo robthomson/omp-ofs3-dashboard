@@ -38,7 +38,8 @@ ofs3.preferences = {
     developer = {
         overlaygrid = false,
         overlaystats = false,
-        logobjprof = false
+        logobjprof = false,
+        telemetrytrace = false
     }
 }
 

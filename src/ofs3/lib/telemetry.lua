@@ -9,6 +9,9 @@ local telemetry = {}
 
 local sensors = {}
 local currentProtocol = nil
+local debugLastTraceAt = 0
+local DEBUG_TRACE_INTERVAL = 2.0
+local sensorTraceOrder = {"profile", "voltage", "current", "consumption", "rpm", "temp_esc"}
 
 local sensorTable = {
     rssi = {
@@ -73,7 +76,7 @@ local sensorTable = {
                 min = 0,
                 max = 3000
             }},
-            crsf = {"Rx Batt"},
+            crsf = {{crsfId = 0x08, subId = 0}},
             sport = {{appId = 0x0B50, subId = 0}, "ESC Voltage"}
         }
     },
@@ -92,7 +95,7 @@ local sensorTable = {
                 min = 0,
                 max = 4000
             }},
-            crsf = {"GPS alt"},
+            crsf = {{crsfId = 0x02, subId = 3}},
             sport = {{appId = 0x0500, subId = 0}, "RPM"}
         }
     },
@@ -120,7 +123,7 @@ local sensorTable = {
                 min = 0,
                 max = 300
             }},
-            crsf = {"Rx Current"},
+            crsf = {{crsfId = 0x08, subId = 1}},
             sport = {{appId = 0x0B50, subId = 1}, "ESC current"}
         }
     },
@@ -139,7 +142,7 @@ local sensorTable = {
                 min = 0,
                 max = 100
             }},
-            crsf = {"GPS speed"},
+            crsf = {{crsfId = 0x02, subId = 2}},
             sport = {{appId = 0x0B70, subId = 0}, "ESC temp"}
         },
         localizations = function(value)
@@ -170,7 +173,7 @@ local sensorTable = {
                 min = 0,
                 max = 5000
             }},
-            crsf = {"Rx Cons"},
+            crsf = {{crsfId = 0x08, subId = 2}},
             sport = {{appId = 0x0B60, subId = 1}, "ESC consumption"}
         }
     }
@@ -188,6 +191,93 @@ local function sourceIsUsable(source)
     return true
 end
 
+local function telemetryTraceEnabled()
+    local developer = ofs3.preferences and ofs3.preferences.developer or nil
+    return developer and developer.telemetrytrace == true
+end
+
+local function formatProbe(entry)
+    if type(entry) == "string" then
+        return 'name="' .. entry .. '"'
+    end
+
+    if type(entry) ~= "table" then
+        return tostring(entry)
+    end
+
+    local parts = {}
+
+    if entry.category ~= nil then
+        parts[#parts + 1] = "category=" .. tostring(entry.category)
+    end
+    if entry.appId ~= nil then
+        parts[#parts + 1] = string.format("appId=0x%X", tonumber(entry.appId) or 0)
+    end
+    if entry.uid ~= nil then
+        parts[#parts + 1] = string.format("uid=0x%X", tonumber(entry.uid) or 0)
+    end
+    if entry.crsfId ~= nil then
+        parts[#parts + 1] = string.format("crsfId=0x%X", tonumber(entry.crsfId) or 0)
+    end
+    if entry.subId ~= nil then
+        parts[#parts + 1] = "subId=" .. tostring(entry.subId)
+    end
+    if entry.subIdStart ~= nil then
+        parts[#parts + 1] = "subIdStart=" .. tostring(entry.subIdStart)
+    end
+    if entry.subIdEnd ~= nil then
+        parts[#parts + 1] = "subIdEnd=" .. tostring(entry.subIdEnd)
+    end
+    if entry.unit ~= nil then
+        parts[#parts + 1] = "unit=" .. tostring(entry.unit)
+    end
+    if entry.dec ~= nil then
+        parts[#parts + 1] = "dec=" .. tostring(entry.dec)
+    end
+
+    if #parts == 0 then
+        return "{}"
+    end
+
+    return table.concat(parts, ",")
+end
+
+local function readSourceState(source)
+    if not source or not source.state then
+        return "n/a"
+    end
+
+    local ok, state = pcall(function()
+        return source:state()
+    end)
+
+    if not ok then
+        return "err"
+    end
+
+    return tostring(state)
+end
+
+local function readSourceValue(source)
+    if not source or not source.value then
+        return "n/a"
+    end
+
+    local ok, value = pcall(function()
+        return source:value()
+    end)
+
+    if not ok then
+        return "err"
+    end
+
+    if type(value) == "number" then
+        return string.format("%.3f", value)
+    end
+
+    return tostring(value)
+end
+
 local function clearCachedSources()
     sensors = {}
 end
@@ -202,6 +292,52 @@ local function resolveSource(entry)
     end
 
     return system.getSource(entry)
+end
+
+local function getDebugProtocol()
+    local protocol = currentProtocol or ofs3.session.telemetryType
+    if system.getVersion().simulation then
+        protocol = protocol or "sim"
+    end
+    return protocol
+end
+
+local function traceTelemetrySources()
+    if not telemetryTraceEnabled() then
+        return
+    end
+
+    local now = os.clock()
+    if (now - debugLastTraceAt) < DEBUG_TRACE_INTERVAL then
+        return
+    end
+    debugLastTraceAt = now
+
+    local protocol = getDebugProtocol()
+    if not protocol then
+        return
+    end
+
+    ofs3.utils.log("[telemetry-trace] protocol=" .. tostring(protocol))
+
+    for _, sensorKey in ipairs(sensorTraceOrder) do
+        local def = sensorTable[sensorKey]
+        local entries = def and def.sensors and def.sensors[protocol] or nil
+        if entries and #entries > 0 then
+            for index, entry in ipairs(entries) do
+                local source = resolveSource(entry)
+                ofs3.utils.log(string.format(
+                    "[telemetry-trace] sensor=%s probe[%d]=%s exists=%s state=%s value=%s",
+                    tostring(sensorKey),
+                    index,
+                    formatProbe(entry),
+                    tostring(source ~= nil),
+                    readSourceState(source),
+                    readSourceValue(source)
+                ))
+            end
+        end
+    end
 end
 
 local function findUsableSource(entries)
@@ -372,10 +508,12 @@ end
 function telemetry.reset()
     clearCachedSources()
     currentProtocol = nil
+    debugLastTraceAt = 0
     telemetry.sensorStats = {}
 end
 
 function telemetry.wakeup()
+    traceTelemetrySources()
     return
 end
 
