@@ -17,6 +17,14 @@ local lastCacheFlushTime = os.clock()
 local wakeupInterval = 1
 local lastWakeupTime = 0
 local simSensorList = nil
+local CRSF_RPM_MAXIMUM = 65000
+local CRSF_PROVISION_INTERVAL = 1
+local crsfStartupProvision = {
+    protocol = nil,
+    lipoHandled = false,
+    rpmHandled = false,
+    lastAttempt = 0
+}
 
 local derivedDefinitions = {
     armed = {name = "Armed", appId = 0x5FE0, unit = UNIT_RAW, minimum = 0, maximum = 1},
@@ -46,6 +54,80 @@ local function getSimulationSensorList()
         simSensorList = ofs3.tasks.telemetry.simSensors()
     end
     return simSensorList
+end
+
+local function resetCrsfStartupProvision(protocol)
+    crsfStartupProvision.protocol = protocol
+    crsfStartupProvision.lipoHandled = false
+    crsfStartupProvision.rpmHandled = false
+    crsfStartupProvision.lastAttempt = 0
+end
+
+local function callSensorMethod(sensor, methodName, ...)
+    if not sensor then
+        return false, "missing"
+    end
+
+    local method = sensor[methodName]
+    if type(method) ~= "function" then
+        return false, "unsupported"
+    end
+
+    local ok, result = pcall(method, sensor, ...)
+    if not ok then
+        return false, result
+    end
+
+    return true, result
+end
+
+local function provisionCrsfStartupSensors(protocol)
+    if protocol ~= crsfStartupProvision.protocol then
+        resetCrsfStartupProvision(protocol)
+    end
+
+    if protocol ~= "crsf" then
+        return
+    end
+
+    if crsfStartupProvision.lipoHandled and crsfStartupProvision.rpmHandled then
+        return
+    end
+
+    local now = os.clock()
+    if now - crsfStartupProvision.lastAttempt < CRSF_PROVISION_INTERVAL then
+        return
+    end
+    crsfStartupProvision.lastAttempt = now
+
+    if not crsfStartupProvision.lipoHandled and system.getSource then
+        local lipoSource = system.getSource("LiPo")
+        if lipoSource then
+            local ok, err = callSensorMethod(lipoSource, "drop")
+            if ok then
+                ofs3.utils.log("[sensors] Dropped CRSF sensor 'LiPo'")
+            else
+                ofs3.utils.log("[sensors] Failed to drop CRSF sensor 'LiPo': " .. tostring(err))
+            end
+            crsfStartupProvision.lipoHandled = true
+        end
+    end
+
+    if not crsfStartupProvision.rpmHandled and system.getSource then
+        local rpmSource =
+            (ofs3.tasks and ofs3.tasks.telemetry and ofs3.tasks.telemetry.getSensorSource and ofs3.tasks.telemetry.getSensorSource("rpm")) or
+            system.getSource({crsfId = 0x02, subId = 3}) or
+            system.getSource("RPM")
+        if rpmSource then
+            local ok, err = callSensorMethod(rpmSource, "maximum", CRSF_RPM_MAXIMUM)
+            if ok then
+                ofs3.utils.log("[sensors] Set CRSF RPM sensor maximum to " .. tostring(CRSF_RPM_MAXIMUM))
+            else
+                ofs3.utils.log("[sensors] Failed to set CRSF RPM sensor maximum: " .. tostring(err))
+            end
+            crsfStartupProvision.rpmHandled = true
+        end
+    end
 end
 
 local function ensureSensor(definition, rootSource)
@@ -194,6 +276,7 @@ function sensors.reset()
     lastCacheFlushTime = os.clock()
     lastWakeupTime = 0
     simSensorList = nil
+    resetCrsfStartupProvision(nil)
 end
 
 function sensors.wakeup(protocol, rootSource)
@@ -216,6 +299,7 @@ function sensors.wakeup(protocol, rootSource)
         updateSimulationSensors(rootSource)
     end
 
+    provisionCrsfStartupSensors(protocol)
     updateDerivedSensors(protocol, rootSource)
 end
 
