@@ -40,7 +40,6 @@ dashboard.boxRects = {}
 dashboard._moduleCache = {}
 dashboard.toolbarVisible = dashboard.toolbarVisible or false
 dashboard.selectedToolbarIndex = dashboard.selectedToolbarIndex or nil
-dashboard.requestLogViewer = false
 dashboard.toolbarLastActivityAt = dashboard.toolbarLastActivityAt or 0
 
 function dashboard.touchToolbar()
@@ -63,7 +62,6 @@ local function ensureDashboardLibraries()
     dashboard.utils = dashboard.utils or assert(loadfile("SCRIPTS:/" .. ofs3.config.baseDir .. "/widgets/dashboard/lib/utils.lua"))()
     dashboard.loaders = dashboard.loaders or assert(loadfile("SCRIPTS:/" .. ofs3.config.baseDir .. "/widgets/dashboard/lib/loaders.lua"))()
     dashboard.toolbar = dashboard.toolbar or assert(loadfile("SCRIPTS:/" .. ofs3.config.baseDir .. "/widgets/dashboard/lib/toolbar.lua"))()
-    dashboard.logviewer = dashboard.logviewer or assert(loadfile("SCRIPTS:/" .. ofs3.config.baseDir .. "/widgets/dashboard/lib/logviewer.lua"))()
 end
 
 local function logWidgetMenu(action)
@@ -345,17 +343,6 @@ function dashboard.menu(widget)
 
     return {
         {
-            "@i18n(widgets.dashboard.open_logs)@",
-            function()
-                logWidgetMenu("selected Open Logs")
-                dashboard.requestLogViewer = true
-                dashboard.closeToolbar()
-                if lcd.invalidate then
-                    lcd.invalidate(widget)
-                end
-            end
-        },
-        {
             "@i18n(widgets.dashboard.reset_flight)@",
             function()
                 logWidgetMenu("selected Reset Flight")
@@ -382,7 +369,6 @@ function dashboard.resetFlightModeAsk()
                     pcall(model.resetFlight)
                 end
                 dashboard.closeToolbar()
-                dashboard.requestLogViewer = false
                 if lcd.invalidate then
                     lcd.invalidate()
                 end
@@ -411,11 +397,6 @@ function dashboard.paint()
         return
     end
 
-    if dashboard.logviewer and dashboard.logviewer.isActive and dashboard.logviewer.isActive() then
-        dashboard.logviewer.paint()
-        return
-    end
-
     ensureState()
     paintObjects()
     if dashboard.toolbar and dashboard.toolbar.draw then
@@ -424,18 +405,6 @@ function dashboard.paint()
 end
 
 function dashboard.wakeup(widget)
-    if dashboard.requestLogViewer and dashboard.logviewer and dashboard.logviewer.open then
-        dashboard.requestLogViewer = false
-        dashboard.closeToolbar()
-        dashboard.logviewer.open(widget)
-    end
-
-    if dashboard.logviewer and dashboard.logviewer.isActive and dashboard.logviewer.isActive() then
-        ofs3.runtime.wakeup()
-        dashboard.logviewer.wakeup(widget)
-        return
-    end
-
     local visible = lcd.isVisible(widget)
     local now = os.clock()
 
@@ -477,10 +446,6 @@ function dashboard.wakeup(widget)
 end
 
 function dashboard.event(widget, category, value, x, y)
-    if dashboard.logviewer and dashboard.logviewer.isActive and dashboard.logviewer.isActive() then
-        return dashboard.logviewer.event(widget, category, value, x, y)
-    end
-
     if gestureConsumeUntilTouchEnd and category == EVT_TOUCH then
         consumeTouchSequence(value)
         if value == TOUCH_END then

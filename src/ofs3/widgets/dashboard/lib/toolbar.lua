@@ -36,15 +36,6 @@ local function getToolbarItems(dashboard)
 
     return {
         {
-            name = "@i18n(widgets.dashboard.toolbar_logs)@",
-            subtitle = "@i18n(widgets.dashboard.toolbar_open_viewer)@",
-            onClick = function(state)
-                state.requestLogViewer = true
-                state.toolbarVisible = false
-                state.selectedToolbarIndex = nil
-            end
-        },
-        {
             name = "@i18n(widgets.dashboard.toolbar_reset)@",
             subtitle = "@i18n(widgets.dashboard.toolbar_clear_session)@",
             onClick = function(state)
