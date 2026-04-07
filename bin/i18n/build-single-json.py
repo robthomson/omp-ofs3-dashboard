@@ -6,22 +6,22 @@ import sys
 from collections import defaultdict
 from pathlib import Path
 
-# Source root: i18n/json/**/<locale>.json
+# Source root: i18n/json/<locale>.json
 JSON_ROOT = Path(__file__).parent / "json"
+ROOT_NAMESPACE = "widgets/dashboard"
 
 # Default output root: scripts/ofs3/i18n/<locale>.json
 DEFAULT_OUT_DIR = (Path(__file__).parent / ".." / ".." / "scripts" / "ofs3" / "i18n").resolve()
 
 
 def insert_nested(root: dict, rel_dir: str, leaf: dict) -> None:
-    """Place the leaf dict under nested keys derived from rel_dir (e.g. 'widgets/dashboard')."""
+    """Place the leaf dict under nested keys derived from rel_dir."""
     cur = root
     if rel_dir and rel_dir != ".":
         for part in rel_dir.replace("\\", "/").split("/"):
             if not part:
                 continue
             cur = cur.setdefault(part, {})
-    # shallow-merge at this level
     for key, value in leaf.items():
         if isinstance(value, dict) and isinstance(cur.get(key), dict):
             cur[key] = {**cur[key], **value}
@@ -29,8 +29,15 @@ def insert_nested(root: dict, rel_dir: str, leaf: dict) -> None:
             cur[key] = value
 
 
+def source_namespace(rel_dir: str) -> str:
+    """Top-level locale files are treated as the dashboard namespace."""
+    if rel_dir in ("", "."):
+        return ROOT_NAMESPACE
+    return rel_dir
+
+
 def discover_locale_files():
-    """Yield tuples (locale, file_path, rel_dir) for every i18n/json/**/<locale>.json."""
+    """Yield tuples (locale, file_path, rel_dir) for every i18n/json/<locale>.json."""
     for dirpath, _, files in os.walk(JSON_ROOT):
         rel_dir = os.path.relpath(dirpath, JSON_ROOT)
         for filename in files:
@@ -50,7 +57,7 @@ def main(argv=None):
     import argparse
 
     parser = argparse.ArgumentParser(
-        description="Build merged per-locale JSON files from i18n/json/**/<locale>.json"
+        description="Build merged per-locale JSON files from i18n/json/<locale>.json"
     )
     parser.add_argument("--only", nargs="*", help="Limit to specific locales (e.g. --only en de fr)")
     parser.add_argument("--out-dir", help="Optional output directory for generated <locale>.json files")
@@ -72,7 +79,7 @@ def main(argv=None):
         except Exception as exc:
             errors.append(f"{file_path}: {exc}")
             continue
-        insert_nested(merged_per_locale[locale], rel_dir, data)
+        insert_nested(merged_per_locale[locale], source_namespace(rel_dir), data)
         counts_per_locale[locale] += 1
 
     out_dir = Path(args.out_dir).resolve() if args.out_dir else DEFAULT_OUT_DIR
