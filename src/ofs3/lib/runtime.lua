@@ -10,6 +10,7 @@ local runtime = {}
 local telemetry = ofs3.tasks.telemetry
 
 local trackedStats = {"rssi", "voltage", "rpm", "current", "temp_esc", "consumption", "smartfuel"}
+local FLIGHT_COUNT_MIN_SECONDS = 10
 
 local defaultBatteryConfig = {
     batteryCapacity = 750,
@@ -391,7 +392,7 @@ local function updateTimer()
             ofs3.ini.setvalue(ofs3.session.modelPreferences, "general", "totalflighttime", timer.lifetime)
         end
 
-        if timer.live >= 25 and not ofs3.session.flightCounted and ofs3.session.modelPreferences then
+        if timer.live >= FLIGHT_COUNT_MIN_SECONDS and not ofs3.session.flightCounted and ofs3.session.modelPreferences then
             ofs3.session.flightCounted = true
             local count = tonumber(ofs3.ini.getvalue(ofs3.session.modelPreferences, "general", "flightcount")) or 0
             ofs3.ini.setvalue(ofs3.session.modelPreferences, "general", "flightcount", count + 1)
