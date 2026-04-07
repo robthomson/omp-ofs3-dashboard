@@ -6,39 +6,98 @@ import csv
 import codecs
 import hashlib
 import os
+import re
 import shutil
 import sys
 import tempfile
+from pathlib import Path
+
 try:
     import sox
-except:
-    print("You need sox for python: python -m pip install sox")
-    sys.exit(1)
+except ImportError:
+    sox = None
 try:
     from google.cloud import texttospeech
-except:
-    print("You need google text to speech for python: python -m pip install google-cloud-texttospeech")
-    sys.exit(1)
+except ImportError:
+    texttospeech = None
 
 
-def extract_csv(path, base_dir, variant):
+REPO_ROOT = Path(__file__).resolve().parents[2]
+SOURCE_ROOT = REPO_ROOT / "src" / "ofs3"
+SOUNDPACK_ROOT = REPO_ROOT / "bin" / "sound-generator" / "soundpack"
+PLAY_FILE_RE = re.compile(
+    r"""playFile\(\s*(['"])(?P<pkg>[^'"]+)\1\s*,\s*(['"])(?P<file>[^'"]+)\3\s*\)""",
+    flags=re.DOTALL,
+)
+
+
+def discover_used_prompts(source_root=SOURCE_ROOT):
+    prompts = set()
+    for path in sorted(source_root.rglob("*.lua")):
+        source = path.read_text(encoding="utf-8", errors="ignore")
+        for match in PLAY_FILE_RE.finditer(source):
+            pkg = match.group("pkg").strip().strip("/")
+            file_name = match.group("file").strip().lstrip("/")
+            if pkg and file_name:
+                prompts.add(f"{pkg}/{file_name}")
+    return sorted(prompts)
+
+
+def extract_csv(path, base_dir, variant, used_prompts=None):
     result = []
+    selected_prompts = set(used_prompts or [])
     with codecs.open(path, "r", "utf-8") as f:
         reader = csv.reader(f)
-        next(reader)
         for row in reader:
-            if len(row) == 4:
-                rel_path, text, options_text, description = row
-                path = os.path.join("..", "..", "bin", "sound-generator", "soundpack", base_dir, variant, rel_path)
-                options = {}
-                for part in options_text.split(";"):
-                    if part:
-                        key, value = part.split("=")
-                        options[key] = value
-                result.append((path, text, options, description))
-            else:
-                print("Invalid row: %s" % row)
+            if not row or not any(cell.strip() for cell in row):
+                continue
+            rel_path = row[0].strip()
+            if not rel_path or rel_path.startswith("#"):
+                continue
+
+            text = row[1].strip() if len(row) > 1 else ""
+            options_text = row[2].strip() if len(row) > 2 else ""
+            description = row[3].strip() if len(row) > 3 else ""
+
+            if selected_prompts and rel_path not in selected_prompts:
+                continue
+
+            output_path = SOUNDPACK_ROOT / base_dir / variant / rel_path
+            options = {}
+            for part in options_text.split(";"):
+                if part:
+                    key, value = part.split("=")
+                    options[key] = value
+            result.append((str(output_path), rel_path, text, options, description))
     return result
+
+
+def prune_unused_audio(base_dir, variant, used_prompts):
+    if not used_prompts:
+        return
+
+    target_root = SOUNDPACK_ROOT / base_dir / variant
+    if not target_root.is_dir():
+        return
+
+    keep = set(used_prompts)
+    removed = 0
+
+    for path in sorted(target_root.rglob("*.wav")):
+        rel_path = path.relative_to(target_root).as_posix()
+        if rel_path not in keep:
+            path.unlink()
+            removed += 1
+
+    for path in sorted(target_root.rglob("*"), reverse=True):
+        if path.is_dir():
+            try:
+                path.rmdir()
+            except OSError:
+                pass
+
+    if removed:
+        print(f"[AUDIO] Removed {removed} stale prompt file(s) from {target_root}")
 
 
 class NullCache:
@@ -72,6 +131,8 @@ class PromptsCache:
 class BaseGenerator:
     @staticmethod
     def sox(input, output, tempo=None, norm=False, silence=False):
+        if sox is None:
+            raise RuntimeError("You need sox for python: python -m pip install sox")
         tfm = sox.Transformer()
         tfm.set_output_format(channels=1, rate=16000, encoding="a-law")
         extra_args = []
@@ -86,6 +147,10 @@ class BaseGenerator:
 
 class GoogleCloudTextToSpeechGenerator(BaseGenerator):
     def __init__(self, voice, speed):
+        if texttospeech is None:
+            raise RuntimeError(
+                "You need google text to speech for python: python -m pip install google-cloud-texttospeech"
+            )
         self.voice_code = voice
         self.speed = speed
         self.client = texttospeech.TextToSpeechClient()
@@ -118,22 +183,59 @@ class GoogleCloudTextToSpeechGenerator(BaseGenerator):
         shutil.rmtree(temp_path)
 
 
-def build(engine, voice, speed, csv, cache, base_dir, variant, only_missing=False, recreate_cache=False):
-    required_audio_path = os.path.join("..", "..", "scripts", "ofs3", "audio")
-    if not os.path.exists(required_audio_path):
-        print(f"Error: Required audio path not found: {required_audio_path}")
+def build(
+    engine,
+    voice,
+    speed,
+    csv,
+    cache,
+    base_dir,
+    variant,
+    only_missing=False,
+    recreate_cache=False,
+    all_prompts=False,
+    keep_stale_files=False,
+):
+    if not SOURCE_ROOT.exists():
+        print(f"Error: Source tree not found: {SOURCE_ROOT}")
         return 1
 
     if engine == "google":
-        generator = GoogleCloudTextToSpeechGenerator(voice, speed)
+        try:
+            generator = GoogleCloudTextToSpeechGenerator(voice, speed)
+        except RuntimeError as exc:
+            print(exc)
+            return 1
     else:
         print("Unknown engine %s" % engine)
         return 1
 
-    prompts = extract_csv(csv, base_dir, variant)
+    used_prompts = [] if all_prompts else discover_used_prompts()
+    if not all_prompts:
+        if not used_prompts:
+            print(f"Error: No sound prompts discovered in {SOURCE_ROOT}")
+            return 1
+        print(f"[AUDIO] Using {len(used_prompts)} prompt(s) referenced by {SOURCE_ROOT}")
+        for prompt in used_prompts:
+            print(f"[AUDIO]   {prompt}")
+
+    prompts = extract_csv(csv, base_dir, variant, used_prompts=used_prompts)
+    prompt_paths = {rel_path for _, rel_path, _, _, _ in prompts}
+
+    if used_prompts:
+        missing_prompts = [prompt for prompt in used_prompts if prompt not in prompt_paths]
+        if missing_prompts:
+            print("Error: CSV is missing prompt(s):")
+            for prompt in missing_prompts:
+                print(f"  - {prompt}")
+            return 1
+
+    if used_prompts and not keep_stale_files:
+        prune_unused_audio(base_dir, variant, used_prompts)
+
     cache = PromptsCache(os.path.join(cache, generator.cache_prefix())) if cache else NullCache()
 
-    for path, text, options, _ in prompts:
+    for path, _, text, options, _ in prompts:
         if only_missing and os.path.exists(path):
             continue
         elif cache and not recreate_cache and cache.get(path, text, options):
@@ -160,11 +262,20 @@ def main():
     parser.add_argument('--speed', type=float, help="Voice speed", default=1.0)
     parser.add_argument('--base-dir', action="store", required=True, help="i18n folder name (e.g., en, es)")
     parser.add_argument('--variant', action="store", required=True, help="i18n variant (e.g., male, female)")
+    parser.add_argument('--all-prompts', action="store_true", help="Generate every CSV row instead of only the prompts used by src/ofs3")
+    parser.add_argument('--keep-stale-files', action="store_true", help="Keep unused generated .wav files in the target soundpack variant")
+    parser.add_argument('--list-used', action="store_true", help="List the prompts referenced by src/ofs3 and exit")
     args = parser.parse_args()
+
+    if args.list_used:
+        for prompt in discover_used_prompts():
+            print(prompt)
+        return 0
 
     return build(
         args.engine, args.voice, args.speed, args.csv, args.cache,
-        args.base_dir, args.variant, args.only_missing, args.recreate_cache
+        args.base_dir, args.variant, args.only_missing, args.recreate_cache,
+        args.all_prompts, args.keep_stale_files
     )
 
 
