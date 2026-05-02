@@ -133,8 +133,23 @@ local tool = {
     formFields = {},
     icons = {},
     paintCache = newPaintCache(),
-    state = newState()
+    state = newState(),
+    progressDialog = nil
 }
+
+local function openProgressDialog(title, message)
+    if form.openWaitDialog and ofs3.utils.ethosVersionAtLeast({26, 1, 0}) then
+        return form.openWaitDialog({title = title, message = message, progress = true})
+    end
+    return form.openProgressDialog(title, message)
+end
+
+local function closeProgressDialog()
+    if tool.progressDialog then
+        tool.progressDialog:close()
+        tool.progressDialog = nil
+    end
+end
 
 local function buildColorTable()
     if lcd.darkMode() then
@@ -428,6 +443,7 @@ local function closeOpenJobHandle()
 end
 
 local function resetViewState()
+    closeProgressDialog()
     closeOpenJobHandle()
     tool.state.selectedFile = nil
     tool.state.rawHeader = {}
@@ -570,6 +586,11 @@ local function calculateZoomSteps(logLineCount)
 end
 
 local function queueLogLoad(filename)
+    closeProgressDialog()
+    tool.progressDialog = openProgressDialog("@i18n(widgets.dashboard.logs_loading)@", extractShortTimestamp(filename))
+    tool.progressDialog:closeAllowed(false)
+    tool.progressDialog:value(0)
+
     tool.state.loadJob = {
         filename = filename,
         phase = "open"
@@ -606,6 +627,7 @@ local function processLoadJob()
         local path = ofs3.logs.getDirectory() .. "/" .. tostring(job.filename)
         job.handle = io.open(path, "r")
         if not job.handle then
+            closeProgressDialog()
             tool.state.loadError = "@i18n(widgets.dashboard.logs_open_failed)@"
             tool.state.loadJob = nil
             return true
@@ -618,6 +640,7 @@ local function processLoadJob()
                 job.handle:close()
             end)
             job.handle = nil
+            closeProgressDialog()
             tool.state.loadError = "@i18n(widgets.dashboard.logs_invalid_header)@"
             tool.state.loadJob = nil
             return true
@@ -653,11 +676,13 @@ local function processLoadJob()
                 job.handle:close()
             end)
             job.handle = nil
+            closeProgressDialog()
             tool.state.loadError = "@i18n(widgets.dashboard.logs_invalid_header)@"
             tool.state.loadJob = nil
             return true
         end
 
+        if tool.progressDialog then tool.progressDialog:value(5) end
         job.header = header
         job.parsed = parsed
         job.phase = "read"
@@ -677,6 +702,7 @@ local function processLoadJob()
                 job.handle = nil
                 job.phase = "finalize"
                 job.finalizeIndex = 1
+                if tool.progressDialog then tool.progressDialog:value(85) end
                 return true
             end
 
@@ -689,12 +715,20 @@ local function processLoadJob()
             processed = processed + 1
         end
 
+        -- progress 5→85% based on lines read; 900 lines ≈ 15 min max flight
+        if tool.progressDialog then
+            tool.progressDialog:value(math_min(85, 5 + math_floor((job.readCount / 900) * 80)))
+        end
         return true
     end
 
     if job.phase == "finalize" then
         local column = job.parsed[job.finalizeIndex]
         if column then
+            -- progress 85→97% across 5 columns (each step +3%)
+            if tool.progressDialog then
+                tool.progressDialog:value(85 + math_floor(((job.finalizeIndex - 1) / 5) * 15))
+            end
             column.data = padTable(column.data, LOG_PADDING)
             column.minimum, column.maximum, column.average = calculateStats(column.data)
             job.finalizeIndex = job.finalizeIndex + 1
@@ -712,6 +746,8 @@ local function processLoadJob()
         tool.state.zoomLevel = math_min(tool.state.zoomLevel or 1, tool.state.zoomCount)
         tool.paintCache = newPaintCache()
         setZoomButtonsEnabled()
+        if tool.progressDialog then tool.progressDialog:value(100) end
+        closeProgressDialog()
         return true
     end
 
@@ -1153,7 +1189,6 @@ end
 
 local function paintView()
     if tool.state.loadJob then
-        paintLoadingMessage("@i18n(widgets.dashboard.logs_loading)@", extractShortTimestamp(tool.state.selectedFile))
         return
     end
 
@@ -1163,7 +1198,6 @@ local function paintView()
     end
 
     if not tool.state.processedLogData then
-        paintLoadingMessage("@i18n(widgets.dashboard.logs_loading)@", extractShortTimestamp(tool.state.selectedFile))
         return
     end
 
@@ -1244,6 +1278,7 @@ end
 
 function tool.close()
     tool.exitRequested = false
+    closeProgressDialog()
     closeOpenJobHandle()
     clearForm()
 
