@@ -1081,8 +1081,7 @@ local function drawKey(name, keyunit, keyminmax, keyfloor, color, minimum, maxim
 
     lcd.drawText(x + 5, minmaxY, minimumLabel, LEFT)
 
-    local maxW = lcd.getTextSize(maximumLabel)
-    lcd.drawText((graphPos.lcdWidth - maxW) + boxPadding, minmaxY, maximumLabel, LEFT)
+    lcd.drawText(x + width - boxPadding, minmaxY, maximumLabel, RIGHT)
 
     if radio.logShowAvg then
         local averageLabel = "Ø " .. formatDisplayNumber((minimum + maximum) / 2, keyfloor) .. keyunit
