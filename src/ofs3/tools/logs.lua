@@ -828,7 +828,7 @@ openViewPage = function(filename)
     tool.state.lastListSelection = filename
     queueLogLoad(filename)
 
-    addHeaderRow("Logs / " .. extractShortTimestamp(filename), openLogsPage, tool.icons.folder or nil)
+    addHeaderRow("Logs / " .. extractShortTimestamp(filename), openLogsPage, nil)
 
     local graphPos = getGraphPos()
     local zoomButtonWidth = math_max(48, math_floor(graphPos.key_width / 2) - 20)
