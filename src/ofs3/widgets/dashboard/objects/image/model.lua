@@ -28,16 +28,36 @@ end
 
 local _imgCache = {}
 
+local function tryLoadImage(path)
+    if type(path) ~= "string" or path == "" or not loadImage then return nil end
+    if path:match("%.png$") or path:match("%.bmp$") then
+        return loadImage(path)
+    end
+    return loadImage(path .. ".png") or loadImage(path .. ".bmp") or loadImage(path)
+end
+
+local function getBitmapCandidates(bitmap)
+    if type(bitmap) ~= "string" or bitmap == "" then return {} end
+    local candidates = {bitmap}
+    if bitmap:match("^/bitmaps/") then
+        candidates[#candidates + 1] = bitmap:gsub("^/bitmaps", "BITMAPS:", 1)
+    elseif bitmap:match("^/scripts/") then
+        candidates[#candidates + 1] = bitmap:gsub("^/scripts", "SCRIPTS:", 1)
+    elseif bitmap:match("^/system/") then
+        candidates[#candidates + 1] = bitmap:gsub("^/system", "SYSTEM:", 1)
+    elseif not bitmap:match("^[A-Z]+:") and not bitmap:match("^/") then
+        candidates[#candidates + 1] = "BITMAPS:/models/" .. bitmap
+    end
+    return candidates
+end
+
 local function resolveModelImage(cfg)
 
     local craftName = ofs3 and ofs3.session and ofs3.session.craftName
     if craftName and craftName ~= "" then
         local cached = _imgCache[craftName]
         if cached == nil then
-            local base = "/bitmaps/models/" .. craftName
-            local pngPath = base .. ".png"
-            local bmpPath = base .. ".bmp"
-            cached = loadImage and (loadImage(pngPath) or loadImage(bmpPath))
+            cached = tryLoadImage("BITMAPS:/models/" .. craftName)
             _imgCache[craftName] = cached or false
         end
         if cached then return cached end
@@ -45,15 +65,23 @@ local function resolveModelImage(cfg)
 
     if model and model.bitmap then
         local bm = model.bitmap()
-        if bm and type(bm) == "string" and not string.find(bm, "default_") then return bm end
+        if bm then
+            if type(bm) == "userdata" then return bm end
+            if type(bm) == "string" and bm ~= "" and not string.find(bm, "default_") then
+                local candidates = getBitmapCandidates(bm)
+                for i = 1, #candidates do
+                    local loaded = tryLoadImage(candidates[i])
+                    if loaded then return loaded end
+                end
+            end
+        end
     end
 
     local paramImage = getParam(cfg.box, "image")
     if paramImage and paramImage ~= "" then
-        local base = paramImage:gsub("%.png$", ""):gsub("%.bmp$", "")
-        local pngPath = base .. ".png"
-        local bmpPath = base .. ".bmp"
-        return (loadImage and (loadImage(pngPath) or loadImage(bmpPath))) or paramImage
+        local loaded = tryLoadImage(paramImage)
+        if loaded then return loaded end
+        return paramImage
     end
 
     return "widgets/dashboard/gfx/logo.png"
