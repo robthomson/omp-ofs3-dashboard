@@ -137,6 +137,106 @@ local tool = {
     progressDialog = nil
 }
 
+local FALLBACK_THEME_STATE = {
+    dark = {
+        darkMode = true,
+        usesThemeColors = false,
+        primaryColor = COLOR_WHITE_SAFE,
+        primaryBgColor = COLOR_BLACK_SAFE,
+        secondaryColor = COLOR_GREY_SAFE,
+        secondaryBgColor = lcd.RGB(40, 40, 40),
+        focusBgColor = lcd.RGB(40, 40, 40),
+        focusColor = COLOR_WHITE_SAFE,
+        highlightInvertColor = COLOR_BLACK_SAFE,
+        warningColor = lcd.RGB(220, 92, 92),
+        activeColor = lcd.RGB(102, 214, 129),
+        buttonBorderActiveColor = COLOR_WHITE_SAFE,
+        buttonBorderColor = lcd.RGB(86, 96, 106),
+        pageBgColor = lcd.RGB(10, 14, 18)
+    },
+    light = {
+        darkMode = false,
+        usesThemeColors = false,
+        primaryColor = COLOR_BLACK_SAFE,
+        primaryBgColor = COLOR_WHITE_SAFE,
+        secondaryColor = lcd.RGB(108, 116, 124),
+        secondaryBgColor = lcd.RGB(240, 240, 240),
+        focusBgColor = lcd.RGB(240, 240, 240),
+        focusColor = COLOR_BLACK_SAFE,
+        highlightInvertColor = COLOR_WHITE_SAFE,
+        warningColor = lcd.RGB(200, 0, 0),
+        activeColor = lcd.RGB(0, 140, 0),
+        buttonBorderActiveColor = COLOR_BLACK_SAFE,
+        buttonBorderColor = lcd.RGB(196, 202, 208),
+        pageBgColor = lcd.RGB(246, 247, 249)
+    }
+}
+local FALLBACK_CHROME_THEME = {
+    dark = {
+        background = lcd.RGB(10, 14, 18),
+        panel = lcd.RGB(22, 28, 34),
+        panelAlt = lcd.RGB(17, 22, 27),
+        text = COLOR_WHITE_SAFE,
+        muted = lcd.RGB(166, 174, 182),
+        border = lcd.RGB(86, 96, 106)
+    },
+    light = {
+        background = lcd.RGB(246, 247, 249),
+        panel = COLOR_WHITE_SAFE,
+        panelAlt = lcd.RGB(240, 242, 245),
+        text = COLOR_BLACK_SAFE,
+        muted = lcd.RGB(108, 116, 124),
+        border = lcd.RGB(196, 202, 208)
+    }
+}
+local dashboardUtils = nil
+
+local function getDashboardUtils()
+    if dashboardUtils ~= nil then
+        return dashboardUtils or nil
+    end
+
+    dashboardUtils = ofs3.widgets and ofs3.widgets.dashboard and ofs3.widgets.dashboard.utils
+    if dashboardUtils then
+        return dashboardUtils
+    end
+
+    local loader = loadfile("SCRIPTS:/" .. ofs3.config.baseDir .. "/widgets/dashboard/lib/utils.lua")
+    if loader then
+        dashboardUtils = loader()
+        return dashboardUtils
+    end
+
+    dashboardUtils = false
+    return nil
+end
+
+local function getThemeState()
+    local utils = getDashboardUtils()
+    if utils and utils.getThemeState then
+        return utils.getThemeState()
+    end
+
+    return (lcd.darkMode and lcd.darkMode() or false) and FALLBACK_THEME_STATE.dark or FALLBACK_THEME_STATE.light
+end
+
+local function getChromeTheme()
+    local utils = getDashboardUtils()
+    if utils and utils.getChromeTheme then
+        return utils.getChromeTheme()
+    end
+
+    return getThemeState().darkMode and FALLBACK_CHROME_THEME.dark or FALLBACK_CHROME_THEME.light
+end
+
+local function getGraphValueTextColor(themeState)
+    if themeState.usesThemeColors then
+        return themeState.focusColor or themeState.highlightInvertColor or COLOR_WHITE_SAFE
+    end
+
+    return themeState.darkMode and COLOR_BLACK_SAFE or COLOR_WHITE_SAFE
+end
+
 local function openProgressDialog(title, message)
     if form.openWaitDialog and ofs3.utils.ethosVersionAtLeast({26, 1, 0}) then
         return form.openWaitDialog({title = title, message = message, progress = true})
@@ -152,7 +252,19 @@ local function closeProgressDialog()
 end
 
 local function buildColorTable()
-    if lcd.darkMode() then
+    local themeState = getThemeState()
+
+    if themeState.usesThemeColors then
+        return {
+            voltage = themeState.warningColor or lcd.RGB(220, 92, 92),
+            current = themeState.focusBgColor or themeState.buttonBorderActiveColor or lcd.RGB(255, 168, 58),
+            rpm = themeState.activeColor or lcd.RGB(102, 214, 129),
+            temp_esc = themeState.focusColor or themeState.secondaryColor or lcd.RGB(90, 180, 255),
+            throttle_percent = themeState.buttonBorderActiveColor or themeState.primaryColor or lcd.RGB(248, 215, 90)
+        }
+    end
+
+    if themeState.darkMode then
         return {
             voltage = lcd.RGB(220, 92, 92),
             current = lcd.RGB(255, 168, 58),
@@ -1068,7 +1180,7 @@ local function drawKey(name, keyunit, keyminmax, keyfloor, color, minimum, maxim
     lcd.drawText(x + 5, textY, name, LEFT)
 
     lcd.font(radio.logKeyFontSmall)
-    lcd.color(lcd.darkMode() and COLOR_WHITE_SAFE or COLOR_BLACK_SAFE)
+    lcd.color(getThemeState().primaryColor or COLOR_WHITE_SAFE)
 
     if keyunit == "rpm" and ((minimum >= 10000) or (maximum >= 10000)) then
         minText = string_format("%.1fK", minimum / 10000)
@@ -1109,6 +1221,7 @@ local function drawCurrentIndex(points, position, totalPoints, keyunit, keyfloor
     local boxHeight = textH + boxPadding
     local boxY = laneY
     local textY = boxY + (boxHeight / 2 - textH / 2)
+    local themeState = getThemeState()
 
     local textAlign
     local textX
@@ -1126,7 +1239,7 @@ local function drawCurrentIndex(points, position, totalPoints, keyunit, keyfloor
     lcd.color(color)
     lcd.drawFilledRectangle(boxX, boxY, textW + (boxPadding * 2), boxHeight)
 
-    lcd.color(lcd.darkMode() and COLOR_BLACK_SAFE or COLOR_WHITE_SAFE)
+    lcd.color(getGraphValueTextColor(themeState))
     lcd.drawText(textX, textY, valueLabel, textAlign)
 
     if laneNumber == 1 then
@@ -1147,13 +1260,13 @@ local function drawCurrentIndex(points, position, totalPoints, keyunit, keyfloor
         local timeY = graphPos.height + graphPos.menu_offset - 10
 
         lcd.font(radio.logKeyFont)
-        lcd.color(COLOR_WHITE_SAFE)
+        lcd.color(themeState.primaryColor or COLOR_WHITE_SAFE)
         lcd.drawText(textX, timeY, fullLabel, textAlign)
 
-        lcd.color(lcd.darkMode() and COLOR_WHITE_SAFE or COLOR_BLACK_SAFE)
+        lcd.color(themeState.primaryColor or COLOR_WHITE_SAFE)
         lcd.drawLine(linePos, graphPos.menu_offset - 5, linePos, graphPos.menu_offset + graphPos.height)
 
-        lcd.color(lcd.darkMode() and lcd.RGB(40, 40, 40) or lcd.RGB(240, 240, 240))
+        lcd.color(themeState.secondaryBgColor or lcd.RGB(40, 40, 40))
         local zoomX = graphPos.lcdWidth - 25
         local zoomY = graphPos.slider_y
         local zoomW = 20
@@ -1162,26 +1275,27 @@ local function drawCurrentIndex(points, position, totalPoints, keyunit, keyfloor
         local lineOffsetY = (tool.state.zoomCount - tool.state.zoomLevel) * zoomLineH
 
         lcd.drawFilledRectangle(zoomX, zoomY, zoomW, zoomH)
-        lcd.color(tool.state.zoomCount > 1 and (lcd.darkMode() and COLOR_WHITE_SAFE or COLOR_BLACK_SAFE) or COLOR_GREY_SAFE)
+        lcd.color(tool.state.zoomCount > 1 and (themeState.primaryColor or COLOR_WHITE_SAFE) or COLOR_GREY_SAFE)
         lcd.drawFilledRectangle(zoomX, zoomY + lineOffsetY, zoomW, zoomLineH)
     end
 end
 
 local function paintLoadingMessage(message, detail)
     local _, width, height = getRadio()
+    local theme = getChromeTheme()
 
-    lcd.color(lcd.darkMode() and lcd.RGB(22, 28, 34) or lcd.RGB(255, 255, 255))
+    lcd.color(theme.panel)
     lcd.drawFilledRectangle(20, math_floor(height * 0.35), width - 40, 70)
-    lcd.color(lcd.darkMode() and lcd.RGB(86, 96, 106) or lcd.RGB(196, 202, 208))
+    lcd.color(theme.border)
     lcd.drawRectangle(20, math_floor(height * 0.35), width - 40, 70, 1)
 
     lcd.font(FONT_STD)
-    lcd.color(lcd.darkMode() and COLOR_WHITE_SAFE or COLOR_BLACK_SAFE)
+    lcd.color(theme.text)
     lcd.drawText(math_floor(width / 2), math_floor(height * 0.35) + 14, message, CENTERED)
 
     if detail then
         lcd.font(FONT_XXS)
-        lcd.color(COLOR_GREY_SAFE)
+        lcd.color(theme.muted or COLOR_GREY_SAFE)
         lcd.drawText(math_floor(width / 2), math_floor(height * 0.35) + 38, tostring(detail), CENTERED)
     end
 end

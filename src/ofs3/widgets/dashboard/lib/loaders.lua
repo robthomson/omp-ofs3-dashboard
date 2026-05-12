@@ -6,6 +6,7 @@
 local ofs3 = require("ofs3")
 
 local loaders = {}
+local utils = ofs3.widgets.dashboard.utils
 
 local function drawLogoImage(cx, cy, w, h)
     local imageName = "SCRIPTS:/" .. ofs3.config.baseDir .. "/widgets/dashboard/gfx/logo.png"
@@ -87,13 +88,17 @@ function loaders.staticLoader(dashboard, x, y, w, h)
     local cx, cy = x + w / 2, y + h / 2
     local radius = math.min(w, h) * (dashboard.loaderScale or 0.3)
     local thickness = math.max(6, radius * 0.15)
+    local themeState = utils.getThemeState()
+    local ringColor = themeState.primaryColor or lcd.RGB(255, 255, 255, 1.0)
+    local innerColor = themeState.primaryBgColor or themeState.pageBgColor or lcd.RGB(0, 0, 0, 1.0)
+    local activeDotColor = themeState.primaryColor or lcd.RGB(255, 255, 255)
+    local inactiveDotColor = themeState.disableColor or themeState.secondaryColor or lcd.RGB(80, 80, 80)
 
-    local r, g, b = lcd.darkMode() and 255 or 0, lcd.darkMode() and 255 or 0, lcd.darkMode() and 255 or 0
-    lcd.color(lcd.RGB(r, g, b, 1.0))
+    lcd.color(ringColor)
 
     if lcd.drawFilledCircle then
         lcd.drawFilledCircle(cx, cy, radius)
-        lcd.color(lcd.darkMode() and lcd.RGB(0, 0, 0, 1.0) or lcd.RGB(0, 0, 0, 1.0))
+        lcd.color(innerColor)
         lcd.drawFilledCircle(cx, cy, radius - thickness)
     end
 
@@ -113,9 +118,9 @@ function loaders.staticLoader(dashboard, x, y, w, h)
 
     for i = 1, 3 do
         if i == dashboard._dots_index then
-            lcd.color(lcd.darkMode() and lcd.RGB(255, 255, 255) or lcd.RGB(0, 0, 0))
+            lcd.color(activeDotColor)
         else
-            lcd.color(lcd.darkMode() and lcd.RGB(80, 80, 80) or lcd.RGB(180, 180, 180))
+            lcd.color(inactiveDotColor)
         end
         lcd.drawFilledCircle(startX + (i - 1) * spacing, yPos, dotRadius)
     end
@@ -134,8 +139,9 @@ function loaders.staticOverlayMessage(dashboard, x, y, w, h, txt)
     if dashboard._overlay_cycles <= 0 then return end
     dashboard._overlay_cycles = dashboard._overlay_cycles - 1
 
-    local fg = lcd.darkMode() and lcd.RGB(255, 255, 255) or lcd.RGB(255, 255, 255)
-    local bg = lcd.darkMode() and lcd.RGB(0, 0, 0, 1.0) or lcd.RGB(255, 255, 255, 1.0)
+    local themeState = utils.getThemeState()
+    local fg = themeState.primaryColor or lcd.RGB(255, 255, 255)
+    local bg = themeState.primaryBgColor or themeState.pageBgColor or lcd.RGB(0, 0, 0, 1.0)
 
     local cx, cy = x + w / 2, y + h / 2
     local radius = math.min(w, h) * (dashboard.overlayScale or 0.35)
@@ -144,11 +150,10 @@ function loaders.staticOverlayMessage(dashboard, x, y, w, h, txt)
 
     drawOverlayBackground(cx, cy, innerR, bg)
 
-    local r, g, b = lcd.darkMode() and 255 or 0, lcd.darkMode() and 255 or 0, lcd.darkMode() and 255 or 0
-    lcd.color(lcd.RGB(r, g, b, 1.0))
+    lcd.color(themeState.primaryColor or lcd.RGB(255, 255, 255, 1.0))
     if lcd.drawFilledCircle then
         lcd.drawFilledCircle(cx, cy, radius)
-        lcd.color(lcd.darkMode() and lcd.RGB(0, 0, 0, 1.0) or lcd.RGB(0, 0, 0, 1.0))
+        lcd.color(bg)
         lcd.drawFilledCircle(cx, cy, radius - thickness)
     end
 
@@ -166,9 +171,9 @@ function loaders.staticOverlayMessage(dashboard, x, y, w, h, txt)
 
     for i = 1, 3 do
         if i == dashboard._dots_index then
-            lcd.color(lcd.darkMode() and lcd.RGB(255, 255, 255) or lcd.RGB(0, 0, 0))
+            lcd.color(themeState.primaryColor or lcd.RGB(255, 255, 255))
         else
-            lcd.color(lcd.darkMode() and lcd.RGB(80, 80, 80) or lcd.RGB(180, 180, 180))
+            lcd.color(themeState.disableColor or themeState.secondaryColor or lcd.RGB(80, 80, 80))
         end
         lcd.drawFilledCircle(startX + (i - 1) * spacing, yPos, dotRadius)
     end

@@ -6,6 +6,7 @@
 local ofs3 = require("ofs3")
 
 local logviewer = {}
+local utils = ofs3.widgets.dashboard.utils
 
 local GRAPH_COLUMNS = {
     {name = "voltage", keyname = "@i18n(widgets.dashboard.logs_voltage)@", keyunit = "V", colorDark = lcd.RGB(220, 92, 92), colorLight = lcd.RGB(190, 0, 0), graph = true},
@@ -86,33 +87,7 @@ local function isPrevKey(value)
 end
 
 local function getTheme()
-    if lcd.darkMode() then
-        return {
-            background = lcd.RGB(10, 14, 18),
-            panel = lcd.RGB(22, 28, 34),
-            panelAlt = lcd.RGB(17, 22, 27),
-            button = lcd.RGB(36, 36, 39),
-            buttonDisabled = lcd.RGB(24, 24, 27),
-            text = lcd.RGB(245, 246, 247),
-            muted = lcd.RGB(166, 174, 182),
-            accent = lcd.RGB(231, 116, 58),
-            accentSoft = lcd.RGB(72, 44, 30),
-            border = lcd.RGB(86, 96, 106)
-        }
-    end
-
-    return {
-        background = lcd.RGB(246, 247, 249),
-        panel = lcd.RGB(255, 255, 255),
-        panelAlt = lcd.RGB(240, 242, 245),
-        button = lcd.RGB(232, 234, 237),
-        buttonDisabled = lcd.RGB(242, 244, 246),
-        text = lcd.RGB(28, 34, 40),
-        muted = lcd.RGB(108, 116, 124),
-        accent = lcd.RGB(215, 98, 38),
-        accentSoft = lcd.RGB(255, 226, 210),
-        border = lcd.RGB(196, 202, 208)
-    }
+    return utils.getChromeTheme()
 end
 
 local function resetGraphState()
@@ -292,9 +267,25 @@ local function calculateZoomSteps(lineCount)
 end
 
 local function lineColor(column)
-    if lcd.darkMode() then
+    local themeState = utils.getThemeState()
+    if themeState.usesThemeColors then
+        if column.name == "voltage" then
+            return themeState.warningColor or column.colorDark
+        elseif column.name == "current" then
+            return themeState.focusBgColor or themeState.buttonBorderActiveColor or column.colorDark
+        elseif column.name == "rpm" then
+            return themeState.activeColor or column.colorDark
+        elseif column.name == "temp_esc" then
+            return themeState.focusColor or themeState.secondaryColor or column.colorDark
+        elseif column.name == "throttle_percent" then
+            return themeState.buttonBorderActiveColor or themeState.primaryColor or column.colorDark
+        end
+    end
+
+    if themeState.darkMode then
         return column.colorDark
     end
+
     return column.colorLight
 end
 
@@ -656,8 +647,8 @@ end
 local function drawButton(x, y, w, h, label, selected, theme, font, enabled, centered)
     local isEnabled = enabled ~= false
     local fill = selected and theme.accentSoft or (isEnabled and theme.button or theme.buttonDisabled)
-    local border = selected and theme.accent or theme.border
-    local textColor = selected and theme.text or (isEnabled and theme.text or theme.muted)
+    local border = selected and (theme.accentBorder or theme.accent) or theme.border
+    local textColor = selected and (theme.accentText or theme.text) or (isEnabled and theme.text or theme.muted)
 
     lcd.color(fill)
     lcd.drawFilledRectangle(x, y, w, h)
@@ -677,7 +668,7 @@ end
 local function drawTile(x, y, w, h, entry, selected, theme, bitmap)
     lcd.color(selected and theme.accentSoft or theme.button)
     lcd.drawFilledRectangle(x, y, w, h)
-    lcd.color(selected and theme.accent or theme.border)
+    lcd.color(selected and (theme.accentBorder or theme.accent) or theme.border)
     lcd.drawRectangle(x, y, w, h, 1)
 
     if bitmap then
@@ -688,11 +679,11 @@ local function drawTile(x, y, w, h, entry, selected, theme, bitmap)
     end
 
     lcd.font(FONT_XS)
-    lcd.color(theme.text)
+    lcd.color(selected and (theme.accentText or theme.text) or theme.text)
     lcd.drawText(x + math.floor(w / 2), y + 8, extractTimeLabel(entry.name), CENTERED)
 
     lcd.font(FONT_XXS)
-    lcd.color(theme.muted)
+    lcd.color(selected and (theme.accentText or theme.text) or theme.muted)
     lcd.drawText(x + math.floor(w / 2), y + h - 16, extractCompactDateLabel(entry.name), CENTERED)
 end
 

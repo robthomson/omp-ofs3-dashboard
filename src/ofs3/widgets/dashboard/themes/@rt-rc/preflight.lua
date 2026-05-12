@@ -10,36 +10,6 @@ local boxes_cache = nil
 local themeconfig = nil
 local lastScreenW = nil
 
-local darkMode = {
-    textcolor = "white",
-    titlecolor = "white",
-    bgcolor = "black",
-    fillcolor = "green",
-    fillbgcolor = "darkgrey",
-    accentcolor = "white",
-    rssifillcolor = "green",
-    rssifillbgcolor = "darkgrey",
-    txaccentcolor = "grey",
-    txfillcolor = "green",
-    txbgfillcolor = "darkgrey",
-    bgcolortop = lcd.RGB(10, 10, 10)
-}
-
-local lightMode = {
-    textcolor = "black",
-    titlecolor = "black",
-    bgcolor = "white",
-    fillcolor = "green",
-    fillbgcolor = "lightgrey",
-    accentcolor = "darkgrey",
-    rssifillcolor = "green",
-    rssifillbgcolor = "grey",
-    txaccentcolor = "darkgrey",
-    txfillcolor = "green",
-    txbgfillcolor = "grey",
-    bgcolortop = "grey"
-}
-
 local function getUserVoltageOverride(which)
     local prefs = ofs3.session and ofs3.session.modelPreferences
     if prefs and prefs["system/@default"] then
@@ -51,7 +21,7 @@ local function getUserVoltageOverride(which)
     return nil
 end
 
-local colorMode = lcd.darkMode() and darkMode or lightMode
+local colorMode = utils.themeColors()
 
 local theme_section = "system/@default"
 
