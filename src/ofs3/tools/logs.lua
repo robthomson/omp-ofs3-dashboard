@@ -515,23 +515,42 @@ local function ensureIcons()
     if tool.icons.logs == nil then
         tool.icons.logs = loadIconAsset("widgets/dashboard/gfx/logs.png") or false
     end
+
+    -- Copied from rotorflight-lua-ethos-suite's own app/gfx/settings.png --
+    -- same 70x70 size as folder.png/logs.png above, so it sits correctly in
+    -- this same button grid (unlike the slide-up toolbar's own 55px icons,
+    -- a different size class -- see tasks/background.lua's own
+    -- buildToolbarSpec() for that one).
+    if tool.icons.settings == nil then
+        tool.icons.settings = loadIconAsset("widgets/dashboard/gfx/settings.png") or false
+    end
 end
 
-local function addHeaderRow(title, menuHandler, menuIcon)
+-- saveHandler (optional): adds a second button to the right of Menu, in
+-- that order -- matching rotorflight-lua-ethos-suite's/wingflight's own
+-- app/header.lua nav-button row (Menu, Save, Reload, Tool, left to right,
+-- Menu always first/closest to the title). Only openSettingsPage() passes
+-- this; every other caller here is unaffected (same single Menu button, at
+-- the same position, as before).
+local function addHeaderRow(title, menuHandler, menuIcon, saveHandler)
     local radio = getRadio()
     local metrics = getHeaderMetrics()
     local line = form.addLine("")
+    local buttonCount = saveHandler and 2 or 1
+    local reserved = (metrics.buttonW * buttonCount) + (metrics.padding * (buttonCount - 1))
 
     tool.formFields.headerLine = line
     tool.formFields.headerTitle = form.addStaticText(line, {
         x = 0,
         y = getHeaderTitleY(radio.linePaddingTop or 0),
-        w = metrics.titleWidth,
+        w = math_max(40, metrics.windowWidth - reserved - 18),
         h = radio.navbuttonHeight
     }, title)
 
+    local menuX = metrics.windowWidth - reserved - 10
+
     tool.formFields.menu = form.addButton(nil, {
-        x = metrics.windowWidth - metrics.buttonW - 10,
+        x = menuX,
         y = getHeaderNavButtonY(radio.linePaddingTop or 0),
         w = metrics.buttonW,
         h = metrics.buttonH
@@ -542,6 +561,20 @@ local function addHeaderRow(title, menuHandler, menuIcon)
         paint = NOOP_PAINT,
         press = menuHandler
     })
+
+    if saveHandler then
+        tool.formFields.save = form.addButton(nil, {
+            x = menuX + metrics.buttonW + metrics.padding,
+            y = getHeaderNavButtonY(radio.linePaddingTop or 0),
+            w = metrics.buttonW,
+            h = metrics.buttonH
+        }, {
+            text = "@i18n(widgets.dashboard.save)@",
+            options = FONT_S,
+            paint = NOOP_PAINT,
+            press = saveHandler
+        })
+    end
 end
 
 local function closeOpenJobHandle()
@@ -866,9 +899,54 @@ local function processLoadJob()
     return false
 end
 
+-- Forward-declared as a group (matching openViewPage's own pre-existing
+-- pattern just below) because each of these four pages can navigate to any
+-- of the others, in an order that doesn't match the order they're defined
+-- in below -- a plain `local function` would only be visible to code
+-- written *after* it in this file, not to a page defined earlier that
+-- navigates forward to it.
+local openLogsPage
 local openViewPage
+local openHubPage
+local openSettingsPage
 
-local function openLogsPage()
+-- Entry point for the whole tool -- was just openLogsPage() directly before
+-- this suite's own dashboard widget (and its own configure() panel) went
+-- away in favour of the shared `dashboard` package's own standalone widget.
+-- The per-model battery cell-count/capacity settings that used to live in
+-- that widget's configure() panel needed a new home; rather than bolt them
+-- onto the logs page or build a whole separate system tool for two number
+-- fields, this tool now opens on a two-button hub instead of jumping
+-- straight into the log list.
+openHubPage = function()
+    clearForm()
+    tool.page = "hub"
+    resetViewState()
+    ensureIcons()
+
+    addHeaderRow("OFS3", requestExit, nil)
+
+    local layout = getButtonLayout()
+    local y = form.height() + layout.padding
+
+    form.addButton(nil, {x = 0, y = y, w = layout.buttonW, h = layout.buttonH}, {
+        text = "@i18n(widgets.dashboard.logs_menu_logs)@",
+        icon = tool.icons.logs or nil,
+        options = FONT_S,
+        press = openLogsPage,
+    })
+
+    form.addButton(nil, {x = layout.buttonW + layout.padding, y = y, w = layout.buttonW, h = layout.buttonH}, {
+        text = "@i18n(widgets.dashboard.logs_menu_settings)@",
+        icon = tool.icons.settings or nil,
+        options = FONT_S,
+        press = openSettingsPage,
+    })
+
+    invalidate()
+end
+
+openLogsPage = function()
     clearForm()
     tool.page = "logs"
     resetViewState()
@@ -878,7 +956,7 @@ local function openLogsPage()
     local layout = getButtonLayout()
     local selectedButton = nil
 
-    addHeaderRow("Logs", requestExit, nil)
+    addHeaderRow("Logs", openHubPage, nil)
 
     if #tool.state.entries == 0 then
         local _, width, height = getRadio()
@@ -999,6 +1077,64 @@ openViewPage = function(filename)
     })
 
     setZoomButtonsEnabled()
+    invalidate()
+end
+
+-- Per-model battery cell-count/capacity settings -- moved here from
+-- widgets/dashboard/configure.lua's own configure()/read()/write() when
+-- this suite's dashboard widget was retired (see main.lua's own header).
+-- Unlike that widget's configure() panel, this is a plain form page with an
+-- explicit Save button, not Ethos's native per-widget read/write/persistent
+-- machinery -- system tools don't have that mechanism (see
+-- system.registerSystemTool's own docs: no read/write/persistent, unlike
+-- system.registerWidget). That's fine here: ofs3.runtime.readWidgetSettings()/
+-- writeWidgetSettings() already read/write the per-model ini file directly
+-- (SCRIPTS:/ofs3.user/models/<key>.ini) and never actually needed Ethos's
+-- own widget-storage blob -- the `widget` parameter they take was always
+-- just "a table to also copy values onto/read values from", not
+-- specifically an Ethos widget object, so a plain local draft table here
+-- works exactly the same way.
+openSettingsPage = function()
+    clearForm()
+    tool.page = "settings"
+    resetViewState()
+    ensureIcons()
+
+    local draft = {}
+
+    -- Save sits in the header, to the right of Menu -- matching
+    -- rotorflight-lua-ethos-suite's/wingflight's own app/header.lua nav-button
+    -- row, not a separate button below the form fields. Saves and stays on
+    -- this page (same as that header's own Save button) -- Menu is the only
+    -- button that navigates away; an earlier pass here had Save also call
+    -- openHubPage(), a leftover from when it was a single combined
+    -- save-and-return button below the form, before it moved to the header.
+    addHeaderRow("@i18n(widgets.dashboard.logs_menu_settings)@", openHubPage, nil, function()
+        ofs3.runtime.writeWidgetSettings(draft)
+    end)
+
+    local battery = ofs3.runtime.readWidgetSettings(draft)
+
+    local cellsLine = form.addLine("@i18n(widgets.dashboard.configure_cell_count)@")
+    local cellsField = form.addNumberField(cellsLine, nil, 1, 14, function()
+        return math_floor(tonumber(draft.batteryCellCount) or 3)
+    end, function(value)
+        draft.batteryCellCount = math_max(1, math_min(14, math_floor(tonumber(value) or 3)))
+    end)
+    if cellsField and cellsField.suffix then
+        cellsField:suffix("S")
+    end
+
+    local capacityLine = form.addLine("@i18n(widgets.dashboard.configure_capacity)@")
+    local capacityField = form.addNumberField(capacityLine, nil, 100, 20000, function()
+        return math_floor(tonumber(draft.batteryCapacity) or 750)
+    end, function(value)
+        draft.batteryCapacity = math_max(100, math_min(20000, math_floor(tonumber(value) or 750)))
+    end)
+    if capacityField and capacityField.suffix then
+        capacityField:suffix("mAh")
+    end
+
     invalidate()
 end
 
@@ -1340,7 +1476,7 @@ function tool.create()
     tool.state = newState()
     tool.icons = {}
     tool.paintCache = newPaintCache()
-    openLogsPage()
+    openHubPage()
     return {}
 end
 
@@ -1374,6 +1510,8 @@ function tool.event(widget, category, value)
     if category == EVT_CLOSE or isExitKey(value) then
         if tool.page == "view" then
             openLogsPage()
+        elseif tool.page == "logs" or tool.page == "settings" then
+            openHubPage()
         else
             requestExit()
         end
@@ -1395,7 +1533,7 @@ function tool.close()
     closeOpenJobHandle()
     clearForm()
 
-    tool.page = "logs"
+    tool.page = "hub"
     tool.state = newState()
     tool.icons = {}
     tool.paintCache = newPaintCache()

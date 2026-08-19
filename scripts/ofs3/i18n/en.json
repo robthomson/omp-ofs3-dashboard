@@ -86,6 +86,16 @@
         "needs_translation": false,
         "translation": "Loading Log"
       },
+      "logs_menu_logs": {
+        "english": "Flight Logs",
+        "needs_translation": false,
+        "translation": "Flight Logs"
+      },
+      "logs_menu_settings": {
+        "english": "Settings",
+        "needs_translation": false,
+        "translation": "Settings"
+      },
       "logs_metric_max": {
         "english": "Max %s",
         "needs_translation": false,
@@ -150,6 +160,11 @@
         "english": "Reset dashboard flight state and session timer?",
         "needs_translation": false,
         "translation": "Reset dashboard flight state and session timer?"
+      },
+      "save": {
+        "english": "Save",
+        "needs_translation": false,
+        "translation": "Save"
       },
       "telemetry_waiting": {
         "english": "Waiting for telemetry",

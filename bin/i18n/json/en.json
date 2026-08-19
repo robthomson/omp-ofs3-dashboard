@@ -9,6 +9,21 @@
     "translation": "Cell Count",
     "needs_translation": false
   },
+  "logs_menu_logs": {
+    "english": "Flight Logs",
+    "translation": "Flight Logs",
+    "needs_translation": false
+  },
+  "logs_menu_settings": {
+    "english": "Settings",
+    "translation": "Settings",
+    "needs_translation": false
+  },
+  "save": {
+    "english": "Save",
+    "translation": "Save",
+    "needs_translation": false
+  },
   "loading": {
     "english": "LOADING",
     "translation": "LOADING",

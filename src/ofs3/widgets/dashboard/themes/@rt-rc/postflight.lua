@@ -5,7 +5,9 @@
 
 local ofs3 = require("ofs3")
 
-local utils = ofs3.widgets.dashboard.utils
+-- Absolute, not a read of ofs3.widgets.dashboard.utils -- see preflight.lua's
+-- own comment for why.
+local utils = assert(loadfile("SCRIPTS:/" .. ofs3.config.baseDir .. "/widgets/dashboard/lib/utils.lua"))()
 local boxes_cache = nil
 local themeconfig = nil
 local lastScreenW = nil

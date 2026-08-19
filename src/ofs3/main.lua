@@ -62,52 +62,12 @@ local function ensureSharedModules()
     end
 end
 
-local function ensureWidgetModules()
-    ensureSharedModules()
-
-    ofs3.tasks = ofs3.tasks or {}
-
-    if not ofs3.tasks.telemetry then
-        ofs3.tasks.telemetry = assert(loadfile("lib/telemetry.lua"))(ofs3.config)
-    end
-
-    if not ofs3.sensors then
-        ofs3.sensors = assert(loadfile("lib/sensors.lua"))(ofs3.config)
-    end
-
-    if not ofs3.events then
-        ofs3.events = assert(loadfile("lib/events.lua"))(ofs3.config)
-    end
-
-    if not ofs3.runtime then
-        ofs3.runtime = assert(loadfile("lib/runtime.lua"))(ofs3.config)
-    end
-
-    if not ofs3.widgets.dashboard then
-        ofs3.widgets.dashboard = assert(loadfile("widgets/dashboard/dashboard.lua"))(ofs3.config)
-    end
-
-    if not ofs3.widgets.dashboardConfigure then
-        ofs3.widgets.dashboardConfigure = assert(loadfile("widgets/dashboard/configure.lua"))(ofs3.config)
-    end
-end
-
 local function ensureLogsTool()
     ensureSharedModules()
 
     if not ofs3.tools.logs then
         ofs3.tools.logs = assert(loadfile("tools/logs.lua"))(ofs3.config)
     end
-end
-
-local function callWidget(method, ...)
-    ensureWidgetModules()
-    return ofs3.widgets.dashboard[method](...)
-end
-
-local function callWidgetConfigure(method, ...)
-    ensureWidgetModules()
-    return ofs3.widgets.dashboardConfigure[method](...)
 end
 
 local function callLogsTool(method, ...)
@@ -155,46 +115,24 @@ local function loadToolIcon(path)
     return nil
 end
 
-local function registerWidget()
-    system.registerWidget({
-        key = "ofs3dsh",
-        name = "OFS3 Dashboard",
-        create = function(...)
-            return callWidget("create", ...)
-        end,
-        configure = function(...)
-            return callWidgetConfigure("configure", ...)
-        end,
-        paint = function(...)
-            return callWidget("paint", ...)
-        end,
-        event = function(...)
-            return callWidget("event", ...)
-        end,
-        menu = function(...)
-            return callWidget("menu", ...)
-        end,
-        wakeup = function(...)
-            return callWidget("wakeup", ...)
-        end,
-        read = function(...)
-            return callWidgetConfigure("read", ...)
-        end,
-        write = function(...)
-            return callWidgetConfigure("write", ...)
-        end,
-        title = false,
-        persistent = false
-    })
-end
-
+-- This suite no longer registers its own dashboard widget -- the shared
+-- `dashboard` package's own standalone widget (SCRIPTS:/dashboard) renders
+-- for this suite now, fed by tasks/background.lua's own "session.update"
+-- publish instead of a local rendering/theme engine. See that repo's own
+-- docs/dashboard-spec.md and tasks/background.lua's own header.
+--
+-- Renamed from "OFS3 Logs": this tool now opens on a two-button hub (Flight
+-- Logs / Settings, see tools/logs.lua's own openHubPage()) rather than
+-- jumping straight into the log list, since the per-model battery
+-- cell-count/capacity settings that used to live in the dashboard widget's
+-- own configure() panel needed a new home once that widget was retired.
 local function registerLogsTool()
     if not system.registerSystemTool then
         return
     end
 
-    system.registerSystemTool({
-        name = "OFS3 Logs",
+    return system.registerSystemTool({
+        name = "OFS3",
         icon = loadToolIcon("widgets/dashboard/gfx/icon.png"),
         create = function(...)
             return callLogsTool("create", ...)
@@ -215,8 +153,12 @@ local function registerLogsTool()
 end
 
 local function init()
-    registerWidget()
-    registerLogsTool()
+    local background_task = assert(loadfile("tasks/background.lua"))()
+
+    local logsToolHandle = registerLogsTool()
+    background_task.setLogsToolHandle(logsToolHandle)
+
+    background_task.init()
 end
 
 return {init = init}

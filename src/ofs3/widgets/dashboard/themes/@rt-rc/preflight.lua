@@ -5,7 +5,12 @@
 
 local ofs3 = require("ofs3")
 
-local utils = ofs3.widgets.dashboard.utils
+-- Absolute, not a read of ofs3.widgets.dashboard.utils -- this suite no
+-- longer has a dashboard widget of its own to populate that global (see
+-- tasks/background.lua's own header); the shared `dashboard` package's own
+-- standalone widget loads this theme file directly, so it must load its own
+-- dependency rather than assume something else already did.
+local utils = assert(loadfile("SCRIPTS:/" .. ofs3.config.baseDir .. "/widgets/dashboard/lib/utils.lua"))()
 local boxes_cache = nil
 local themeconfig = nil
 local lastScreenW = nil
